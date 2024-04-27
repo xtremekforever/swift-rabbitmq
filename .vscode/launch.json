@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:swift-rabbitmq}",
+            "name": "Debug Example",
+            "program": "${workspaceFolder:swift-rabbitmq}/.build/debug/Example",
+            "preLaunchTask": "swift: Build Debug Example"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:swift-rabbitmq}",
+            "name": "Release Example",
+            "program": "${workspaceFolder:swift-rabbitmq}/.build/release/Example",
+            "preLaunchTask": "swift: Build Release Example"
+        }
+    ]
+}

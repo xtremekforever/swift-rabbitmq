@@ -22,5 +22,9 @@ let package = Package(
                 .product(name: "AMQPClient", package: "rabbitmq-nio")
             ]
         ),
+        .executableTarget(
+            name: "Example",
+            dependencies: [ "RabbitMq" ]
+        )
     ]
 )
