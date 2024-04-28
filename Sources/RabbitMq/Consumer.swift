@@ -1,4 +1,4 @@
-
+@preconcurrency
 import AMQPClient
 import NIO
 

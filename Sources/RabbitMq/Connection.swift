@@ -1,9 +1,8 @@
-
 import AMQPClient
 import Foundation
 import NIO
 
-final public class Connection: Sendable {
+public actor Connection {
     private let config: AMQPConnectionConfiguration
     private let eventLoop: EventLoop
 
@@ -30,8 +29,8 @@ final public class Connection: Sendable {
         return channel
     }
 
-    public func close() {
-        channel?.close()
-        _ = connection?.close()
+    public func close() async throws {
+        try await channel?.close()
+        try await connection?.close()
     }
 }

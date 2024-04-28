@@ -3,9 +3,6 @@ import NIO
 import RabbitMq
 
 let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F")
-defer {
-    connection.close()
-}
 
 let exchangeOptions = ExchangeOptions(
     declare: true,
@@ -39,6 +36,7 @@ for _ in 0..<4 {
     try await Task.sleep(for: .seconds(1))
 }
 
-consumeTask.cancel()
-
 print("Done!")
+
+consumeTask.cancel()
+try await connection.close()
