@@ -1,7 +1,7 @@
 import AMQPClient
 import AMQPProtocol
 
-public struct ConsumerOptions {
+public struct ConsumerOptions: Sendable {
     var consumerTag: String
     var noAck: Bool
     var exclusive: Bool

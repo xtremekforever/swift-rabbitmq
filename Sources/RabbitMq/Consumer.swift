@@ -3,7 +3,7 @@ import AMQPClient
 import NIO
 
 
-public struct Consumer {
+public struct Consumer: Sendable {
     private let connection: Connection
     private let queueName: String
     private let consumerOptions: ConsumerOptions

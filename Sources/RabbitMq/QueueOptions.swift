@@ -1,6 +1,6 @@
 import AMQPProtocol
 
-public struct QueueOptions {
+public struct QueueOptions: Sendable {
     var declare:    Bool
     var autoDelete: Bool
     var exclusive:  Bool

@@ -3,7 +3,7 @@ import AMQPClient
 import Foundation
 import NIO
 
-public class Connection {
+final public class Connection: Sendable {
     private let config: AMQPConnectionConfiguration
     private let eventLoop: EventLoop
 

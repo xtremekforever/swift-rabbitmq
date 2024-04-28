@@ -1,11 +1,11 @@
 
 import AMQPProtocol
 
-public enum ExchangeType {
+public enum ExchangeType: Sendable {
     case fanout, direct, headers, topic
 }
 
-public struct ExchangeOptions {
+public struct ExchangeOptions: Sendable {
     var declare:    Bool
     var name:       String
     var type:       ExchangeType

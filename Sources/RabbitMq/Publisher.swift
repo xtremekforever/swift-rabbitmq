@@ -2,7 +2,7 @@
 import AMQPClient
 import NIO
 
-public struct Publisher {
+public struct Publisher: Sendable {
     private let connection: Connection
     private let exchangeOptions: ExchangeOptions
 
