@@ -3,7 +3,7 @@ import AMQPClient
 import Foundation
 import NIO
 
-public actor Connection {
+public class Connection {
     private let config: AMQPConnectionConfiguration
     private let eventLoop: EventLoop
 
@@ -30,7 +30,7 @@ public actor Connection {
         return channel
     }
 
-    deinit {
+    public func close() {
         channel?.close()
         _ = connection?.close()
     }

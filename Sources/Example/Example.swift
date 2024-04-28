@@ -3,13 +3,9 @@ import NIO
 import RabbitMq
 
 let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F")
-let publisher = RabbitMq.Publisher(connection,
-    exchangeOptions: ExchangeOptions(
-        declare: true,
-        name: "MyTestExchange",
-        durable: true,
-        autoDelete: true
-    )
+defer {
+    connection.close()
+}
 )
 
 print("Connecting to RabbitMq host now...")
