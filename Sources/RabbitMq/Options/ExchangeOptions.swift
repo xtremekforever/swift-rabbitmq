@@ -6,8 +6,6 @@ public enum ExchangeType: Sendable {
 }
 
 public struct ExchangeOptions: Sendable {
-    var declare:    Bool
-    var name:       String
     var type:       ExchangeType
     var passive:    Bool
     var durable:    Bool
@@ -15,16 +13,12 @@ public struct ExchangeOptions: Sendable {
     var `internal`: Bool
     var args:       Table
 
-    public init(declare: Bool = false,
-                name: String = "",
-                type: ExchangeType = ExchangeType.direct,
+    public init(type: ExchangeType = ExchangeType.direct,
                 passive: Bool = false,
                 durable: Bool = false,
                 autoDelete: Bool = false,
                 internal: Bool = false,
                 args: Table = Table()) {
-        self.declare = declare
-        self.name = name
         self.type = type
         self.passive = passive
         self.durable = durable
@@ -35,13 +29,14 @@ public struct ExchangeOptions: Sendable {
 }
 
 extension ExchangeOptions {
-    func exchangeDeclare(_ connection: Connection) async throws {
-        if !self.declare { 
+    func exchangeDeclare(_ connection: Connection, _ exchangeName: String) async throws {
+        // Don't declare exchange if name is empty
+        if exchangeName.isEmpty {
             return
         }
 
         try await connection.reuseChannel().exchangeDeclare(
-            name:       self.name,
+            name:       exchangeName,
             type:       "\(self.type)",
             passive:    self.passive,
             durable:    self.durable,

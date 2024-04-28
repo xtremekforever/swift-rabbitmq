@@ -4,19 +4,18 @@ import RabbitMq
 
 let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F")
 
+// Exchange options are shared between consumer/publisher
 let exchangeOptions = ExchangeOptions(
-    declare: true,
-    name: "MyTestExchange",
     durable: true,
     autoDelete: true
 )
 
-print("Consuming messages now...")
-let consumer = RabbitMq.Consumer(connection, "MyTestQueue", 
-    consumerOptions: .init(
-        exchangeOptions: exchangeOptions,
-        queueOptions: .init(declare: true, autoDelete: true, durable: true)
-    )
+print("Starting test Consumer...")
+let consumer = RabbitMq.Consumer(connection,
+    "MyTestQueue",
+    "MyTestExchange",
+    exchangeOptions: exchangeOptions,
+    queueOptions: .init(autoDelete: true, durable: true)
 )
 let stream = try await consumer.consume()
 let consumeTask = Task {
@@ -25,8 +24,9 @@ let consumeTask = Task {
     }
 }
 
-print("Starting Publisher now...")
+print("Starting test Publisher...")
 let publisher = RabbitMq.Publisher(connection,
+    "MyTestExchange",
     exchangeOptions: exchangeOptions
 )
 for _ in 0..<4 {
@@ -38,5 +38,6 @@ for _ in 0..<4 {
 
 print("Done!")
 
+// Cleanup
 consumeTask.cancel()
 try await connection.close()

@@ -7,21 +7,14 @@ public struct ConsumerOptions: Sendable {
     var exclusive: Bool
     var args: Table
 
-    var exchangeOptions: ExchangeOptions
-    var queueOptions: QueueOptions
-
     public init(consumerTag: String = "",
                 noAck: Bool = false,
                 exclusive: Bool = false,
-                args: Table = Table(),
-                exchangeOptions: ExchangeOptions = ExchangeOptions(),
-                queueOptions: QueueOptions = QueueOptions()) {
+                args: Table = Table()) {
         self.consumerTag = consumerTag
         self.noAck = noAck
         self.exclusive = exclusive
         self.args = args
-        self.exchangeOptions = exchangeOptions
-        self.queueOptions = queueOptions
     }
 }
 

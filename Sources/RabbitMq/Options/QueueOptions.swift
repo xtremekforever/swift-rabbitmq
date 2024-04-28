@@ -1,20 +1,17 @@
 import AMQPProtocol
 
 public struct QueueOptions: Sendable {
-    var declare:    Bool
     var autoDelete: Bool
     var exclusive:  Bool
     var durable:    Bool
     var passive:    Bool
     var args:       Table
 
-    public init(declare: Bool = true,
-                autoDelete: Bool = false,
+    public init(autoDelete: Bool = false,
                 exclusive: Bool = false,
                 durable: Bool = false,
                 passive: Bool = false,
                 args: Table = Table()) {
-        self.declare = declare
         self.autoDelete = autoDelete
         self.exclusive = exclusive
         self.durable = durable
@@ -25,7 +22,8 @@ public struct QueueOptions: Sendable {
 
 extension QueueOptions {
     func queueDeclare(_ connection: Connection, _ queueName: String) async throws {
-        if !self.declare { 
+        // Don't declare queue if name is empty
+        if queueName.isEmpty { 
             return
         }
 
