@@ -19,21 +19,3 @@ public struct QueueOptions: Sendable {
         self.args = args
     }
 }
-
-extension QueueOptions {
-    func queueDeclare(_ connection: Connection, _ queueName: String) async throws {
-        // Don't declare queue if name is empty
-        if queueName.isEmpty { 
-            return
-        }
-
-        try await connection.reuseChannel().queueDeclare(
-            name: queueName,
-            passive: self.passive,
-            durable: self.durable,
-            exclusive: self.exclusive,
-            autoDelete: self.autoDelete,
-            args: self.args
-        )
-    }
-}

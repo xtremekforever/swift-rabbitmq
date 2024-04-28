@@ -16,11 +16,13 @@ public struct Publisher: Sendable {
     }
 
     public func publish(_ data: String, routingKey: String = "") async throws {
+        let channel = try await connection.reuseChannel()
+
         // Declare exchange (only if declare = true)
-        try await exchangeOptions.exchangeDeclare(connection, exchangeName)
+        try await channel.exchangeDeclare(exchangeName, exchangeOptions)
 
         // TODO: Implement some retry logic
-        _ = try await connection.reuseChannel().basicPublish(
+        _ = try await channel.basicPublish(
             from: ByteBuffer(string: data),
             exchange: exchangeName,
             routingKey: routingKey

@@ -32,19 +32,21 @@ public struct Consumer: Sendable {
     }
 
     public func consume() async throws -> AnyAsyncSequence<String> {
+        let channel = try await connection.reuseChannel()
+
         // Declare exchange (only if declare = true)
-        try await exchangeOptions.exchangeDeclare(connection, exchangeName)
+        try await channel.exchangeDeclare(exchangeName, exchangeOptions)
 
         // Declare queue (only if declare = true)
-        try await queueOptions.queueDeclare(connection, queueName)
+        try await channel.queueDeclare(queueName, queueOptions)
 
         // Declare binding to exhange if provided
-        try await bindingOptions.queueBind(connection, queueName, exchangeName, routingKey)
+        try await channel.queueBind(queueName, exchangeName, routingKey, bindingOptions)
 
         // Consume on queue
         return try await AnyAsyncSequence<String>(
             // TODO: Implement some error handling and retry logic
-            consumerOptions.consume(connection, queueName).compactMap() { message in 
+            channel.consume(queueName, consumerOptions).compactMap() { message in 
                 return String(buffer: message.body)
             }
         )
