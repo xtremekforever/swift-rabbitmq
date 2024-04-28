@@ -23,8 +23,9 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "Example",
-            dependencies: [ "RabbitMq" ]
+            name: "BasicConsumePublish",
+            dependencies: [ "RabbitMq" ],
+            path: "Sources/Examples/BasicConsumePublish"
         )
     ]
 )

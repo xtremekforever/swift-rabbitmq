@@ -23,6 +23,30 @@
             "name": "Release Example",
             "program": "${workspaceFolder:swift-rabbitmq}/.build/release/Example",
             "preLaunchTask": "swift: Build Release Example"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:swift-rabbitmq}",
+            "name": "Debug BasicConsumePublish",
+            "program": "${workspaceFolder:swift-rabbitmq}/.build/debug/BasicConsumePublish",
+            "preLaunchTask": "swift: Build Debug BasicConsumePublish"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:swift-rabbitmq}",
+            "name": "Release BasicConsumePublish",
+            "program": "${workspaceFolder:swift-rabbitmq}/.build/release/BasicConsumePublish",
+            "preLaunchTask": "swift: Build Release BasicConsumePublish"
         }
     ]
 }
