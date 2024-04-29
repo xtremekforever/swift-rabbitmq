@@ -7,8 +7,9 @@ let package = Package(
     name: "swift-rabbitmq",
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(name: "RabbitMq",
-            targets: ["RabbitMq"]),
+        .library(
+            name: "RabbitMq",
+            targets: ["RabbitMq"])
     ],
     dependencies: [
         .package(url: "https://github.com/funcmike/rabbitmq-nio", from: "0.1.0-beta3")
@@ -24,8 +25,8 @@ let package = Package(
         ),
         .executableTarget(
             name: "BasicConsumePublish",
-            dependencies: [ "RabbitMq" ],
+            dependencies: ["RabbitMq"],
             path: "Sources/Examples/BasicConsumePublish"
-        )
+        ),
     ]
 )

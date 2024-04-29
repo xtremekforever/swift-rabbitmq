@@ -1,7 +1,5 @@
-@preconcurrency
-import AMQPClient
+@preconcurrency import AMQPClient
 import NIO
-
 
 public struct Consumer: Sendable {
     private let connection: Connection
@@ -13,14 +11,16 @@ public struct Consumer: Sendable {
     private let bindingOptions: BindingOptions
     private let consumerOptions: ConsumerOptions
 
-    public init(_ connection: Connection,
-                _ queueName: String,
-                _ exchangeName: String = "",
-                _ routingKey: String = "",
-                exchangeOptions: ExchangeOptions = ExchangeOptions(),
-                queueOptions: QueueOptions = QueueOptions(),
-                bindingOptions: BindingOptions = BindingOptions(),
-                consumerOptions: ConsumerOptions = ConsumerOptions()) {
+    public init(
+        _ connection: Connection,
+        _ queueName: String,
+        _ exchangeName: String = "",
+        _ routingKey: String = "",
+        exchangeOptions: ExchangeOptions = ExchangeOptions(),
+        queueOptions: QueueOptions = QueueOptions(),
+        bindingOptions: BindingOptions = BindingOptions(),
+        consumerOptions: ConsumerOptions = ConsumerOptions()
+    ) {
         self.connection = connection
         self.queueName = queueName
         self.exchangeName = exchangeName
@@ -46,7 +46,7 @@ public struct Consumer: Sendable {
         // Consume on queue
         return try await AnyAsyncSequence<String>(
             // TODO: Implement some error handling and retry logic
-            channel.consume(queueName, consumerOptions).compactMap() { message in 
+            channel.consume(queueName, consumerOptions).compactMap { message in
                 return String(buffer: message.body)
             }
         )

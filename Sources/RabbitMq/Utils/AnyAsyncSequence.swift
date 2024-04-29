@@ -16,14 +16,13 @@ public struct AnyAsyncSequence<Element>: AsyncSequence, Sendable {
 
         init<I: AsyncIteratorProtocol>(itr: I) where I.Element == IteratorElement {
             var itr = itr
-            self._next = {  try? await itr.next() }
+            self._next = { try? await itr.next() }
         }
 
         public mutating func next() async -> IteratorElement? {
             return await _next()
         }
     }
-
 
     init<S: AsyncSequence & Sendable>(_ seq: S) where S.Element == Element {
         _makeAsyncIterator = {

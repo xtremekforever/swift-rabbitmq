@@ -1,29 +1,32 @@
-
 import AMQPClient
 
 extension AMQPChannel {
-    func exchangeDeclare(_ exchangeName: String,
-                         _ exchangeOptions: ExchangeOptions) async throws {
+    func exchangeDeclare(
+        _ exchangeName: String,
+        _ exchangeOptions: ExchangeOptions
+    ) async throws {
         // Don't declare exchange if name is empty
         if exchangeName.isEmpty {
             return
         }
 
         try await exchangeDeclare(
-            name:       exchangeName,
-            type:       exchangeOptions.type.rawValue,
-            passive:    exchangeOptions.passive,
-            durable:    exchangeOptions.durable,
+            name: exchangeName,
+            type: exchangeOptions.type.rawValue,
+            passive: exchangeOptions.passive,
+            durable: exchangeOptions.durable,
             autoDelete: exchangeOptions.autoDelete,
-            internal:   exchangeOptions.internal,
-            args:       exchangeOptions.args
+            internal: exchangeOptions.internal,
+            args: exchangeOptions.args
         )
     }
 
-    func queueDeclare(_ queueName: String,
-                      _ queueOptions: QueueOptions) async throws {
+    func queueDeclare(
+        _ queueName: String,
+        _ queueOptions: QueueOptions
+    ) async throws {
         // Don't declare queue if name is empty
-        if queueName.isEmpty { 
+        if queueName.isEmpty {
             return
         }
 
@@ -37,25 +40,29 @@ extension AMQPChannel {
         )
     }
 
-    public func queueBind(_ queueName: String,
-                          _ exchangeName: String,
-                          _ routingKey: String,
-                          _ bindingOptions: BindingOptions) async throws {
+    public func queueBind(
+        _ queueName: String,
+        _ exchangeName: String,
+        _ routingKey: String,
+        _ bindingOptions: BindingOptions
+    ) async throws {
         // Can't bind queue if queue name or exchange name is empty
         if queueName.isEmpty || exchangeName.isEmpty {
             return
         }
 
         try await queueBind(
-            queue: queueName, 
+            queue: queueName,
             exchange: exchangeName,
             routingKey: routingKey,
             args: bindingOptions.args
         )
     }
 
-    func consume(_ queueName: String,
-                 _ consumerOptions: ConsumerOptions) async throws -> AMQPSequence<AMQPClient.AMQPResponse.Channel.Message.Delivery> {
+    func consume(
+        _ queueName: String,
+        _ consumerOptions: ConsumerOptions
+    ) async throws -> AMQPSequence<AMQPClient.AMQPResponse.Channel.Message.Delivery> {
         return try await basicConsume(
             queue: queueName,
             consumerTag: consumerOptions.consumerTag,

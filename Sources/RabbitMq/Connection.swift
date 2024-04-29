@@ -9,8 +9,10 @@ public actor Connection {
     private var channel: AMQPChannel?
     private var connection: AMQPConnection?
 
-    public init(eventLoop: EventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1).next(),
-                _ url: String = "") throws {
+    public init(
+        eventLoop: EventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1).next(),
+        _ url: String = ""
+    ) throws {
         self.eventLoop = eventLoop
         self.config = try AMQPConnectionConfiguration.init(url: url)
 
@@ -20,7 +22,8 @@ public actor Connection {
     public func reuseChannel() async throws -> AMQPChannel {
         guard let channel = self.channel, channel.isOpen else {
             if self.connection == nil || self.connection!.isConnected {
-                self.connection = try await AMQPConnection.connect(use: self.eventLoop, from: self.config)
+                self.connection = try await AMQPConnection.connect(
+                    use: self.eventLoop, from: self.config)
             }
 
             self.channel = try await connection!.openChannel()

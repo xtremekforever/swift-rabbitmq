@@ -1,4 +1,3 @@
-
 import NIO
 import RabbitMq
 
@@ -11,7 +10,8 @@ let exchangeOptions = ExchangeOptions(
 )
 
 print("Starting test Consumer...")
-let consumer = RabbitMq.Consumer(connection,
+let consumer = RabbitMq.Consumer(
+    connection,
     "MyTestQueue",
     "MyTestExchange",
     exchangeOptions: exchangeOptions,
@@ -25,7 +25,8 @@ let consumeTask = Task {
 }
 
 print("Starting test Publisher...")
-let publisher = RabbitMq.Publisher(connection,
+let publisher = RabbitMq.Publisher(
+    connection,
     "MyTestExchange",
     exchangeOptions: exchangeOptions
 )

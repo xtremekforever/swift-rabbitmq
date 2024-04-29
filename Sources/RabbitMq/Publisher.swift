@@ -1,4 +1,3 @@
-
 import AMQPClient
 import NIO
 
@@ -7,9 +6,11 @@ public struct Publisher: Sendable {
     private let exchangeName: String
     private let exchangeOptions: ExchangeOptions
 
-    public init(_ connection: Connection,
-                _ exchangeName: String = "",
-                exchangeOptions: ExchangeOptions = ExchangeOptions()) {
+    public init(
+        _ connection: Connection,
+        _ exchangeName: String = "",
+        exchangeOptions: ExchangeOptions = ExchangeOptions()
+    ) {
         self.connection = connection
         self.exchangeName = exchangeName
         self.exchangeOptions = exchangeOptions

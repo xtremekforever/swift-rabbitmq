@@ -1,4 +1,3 @@
-
 import AMQPProtocol
 
 public enum ExchangeType: String, Sendable {
@@ -6,19 +5,21 @@ public enum ExchangeType: String, Sendable {
 }
 
 public struct ExchangeOptions: Sendable {
-    var type:       ExchangeType
-    var passive:    Bool
-    var durable:    Bool
+    var type: ExchangeType
+    var passive: Bool
+    var durable: Bool
     var autoDelete: Bool
     var `internal`: Bool
-    var args:       Table
+    var args: Table
 
-    public init(type: ExchangeType = ExchangeType.direct,
-                passive: Bool = false,
-                durable: Bool = false,
-                autoDelete: Bool = false,
-                internal: Bool = false,
-                args: Table = Table()) {
+    public init(
+        type: ExchangeType = ExchangeType.direct,
+        passive: Bool = false,
+        durable: Bool = false,
+        autoDelete: Bool = false,
+        internal: Bool = false,
+        args: Table = Table()
+    ) {
         self.type = type
         self.passive = passive
         self.durable = durable
