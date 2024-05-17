@@ -30,3 +30,10 @@ let package = Package(
         ),
     ]
 )
+
+// Enable strict concurrency checking for all targets
+for target in package.targets {
+    var settings = target.swiftSettings ?? []
+    settings.append(.enableExperimentalFeature("StrictConcurrency"))
+    target.swiftSettings = settings
+}
