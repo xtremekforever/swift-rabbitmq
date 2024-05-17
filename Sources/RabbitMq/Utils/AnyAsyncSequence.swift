@@ -24,7 +24,7 @@ public struct AnyAsyncSequence<Element>: AsyncSequence, Sendable {
         }
     }
 
-    init<S: AsyncSequence & Sendable>(_ seq: S) where S.Element == Element {
+    public init<S: AsyncSequence & Sendable>(_ seq: S) where S.Element == Element {
         _makeAsyncIterator = {
             AnyAsyncIterator(itr: seq.makeAsyncIterator())
         }
