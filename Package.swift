@@ -16,7 +16,9 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/funcmike/rabbitmq-nio", from: "0.1.0-beta3"),
+        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-log", from: "1.0.0"),
+        .package(url: "https://github.com/groue/Semaphore", from: "0.0.8"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -25,7 +27,9 @@ let package = Package(
             name: "RabbitMq",
             dependencies: [
                 .product(name: "AMQPClient", package: "rabbitmq-nio"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "Logging", package: "swift-log"),
+                .product(name: "Semaphore", package: "Semaphore"),
             ]
         ),
         .executableTarget(

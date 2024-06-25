@@ -1,7 +1,10 @@
+import Logging
 import NIO
 import RabbitMq
 
-let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F")
+var logger = Logger(label: "BasicConsumePublish")
+logger.logLevel = .debug
+let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F", logger: logger)
 
 // Exchange options are shared between consumer/publisher
 let exchangeOptions = ExchangeOptions(
@@ -30,7 +33,7 @@ let publisher = RabbitMq.Publisher(
     "MyTestExchange",
     exchangeOptions: exchangeOptions
 )
-for _ in 0..<4 {
+while !Task.isCancelled {
     print("Publishing test message...")
     try await publisher.publish("A message")
 
