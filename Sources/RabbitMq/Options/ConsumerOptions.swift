@@ -1,4 +1,3 @@
-import AMQPClient
 import AMQPProtocol
 
 public struct ConsumerOptions: Sendable {

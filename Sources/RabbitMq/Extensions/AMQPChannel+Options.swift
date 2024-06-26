@@ -1,4 +1,5 @@
 import AMQPClient
+import NIO
 
 extension AMQPChannel {
     func exchangeDeclare(
@@ -69,6 +70,22 @@ extension AMQPChannel {
             noAck: consumerOptions.noAck,
             exclusive: consumerOptions.exclusive,
             args: consumerOptions.args
+        )
+    }
+
+    func publish(
+        _ data: ByteBuffer,
+        _ exchangeName: String = "",
+        _ routingKey: String = "",
+        _ publisherOptions: PublisherOptions
+    ) async throws -> AMQPResponse.Channel.Basic.Published {
+        return try await basicPublish(
+            from: data,
+            exchange: exchangeName,
+            routingKey: routingKey,
+            mandatory: publisherOptions.mandatory,
+            immediate: publisherOptions.immediate,
+            properties: publisherOptions.properties
         )
     }
 }
