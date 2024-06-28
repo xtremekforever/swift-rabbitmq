@@ -44,11 +44,7 @@ public actor Connection {
         }
 
         guard let channel = self.channel, channel.isOpen else {
-            if self.connection == nil || self.connection!.isConnected {
-                // Close existing connection before starting a new one
-                try await connection?.close()
-
-                // Connect
+            if self.connection == nil || !self.connection!.isConnected {
                 logger.debug("Connecting to broker at \(url)")
                 self.connection = try await AMQPConnection.connect(
                     use: self.eventLoop, from: self.config)
