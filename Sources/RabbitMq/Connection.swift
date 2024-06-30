@@ -5,6 +5,8 @@ import NIO
 import NIOSSL
 import Semaphore
 
+let WaitForConnectionSleepInterval = Duration.milliseconds(100)
+
 public actor Connection {
     private let url: String
     private let eventLoop: EventLoop
@@ -35,40 +37,51 @@ public actor Connection {
         return false
     }
 
-    public func reuseChannel() async throws -> AMQPChannel {
-        // Use semaphore in the context of this method to avoid multiple tasks
+    // Method to use to connect without monitoring, will be called when using reuseChannel()
+    public func connect() async throws {
+        // Semaphore is used in the context of this method to avoid multiple tasks
         // from connecting at the same time
         await connectionSemaphore.wait()
-        defer {
-            connectionSemaphore.signal()
+        defer { connectionSemaphore.signal() }
+
+        if !isConnected() {
+            logger.info("Connecting to broker at \(url)")
+            self.connection = try await AMQPConnection.connect(use: self.eventLoop, from: self.config)
+            logger.info("Connected to broker at \(url)")
+        }
+    }
+
+    public func getChannel() async throws -> AMQPChannel? {
+        // Not connected
+        guard isConnected() else {
+            return nil
         }
 
+        // We're connected, let's reuse the channel
         guard let channel = self.channel, channel.isOpen else {
-            if self.connection == nil || self.connection!.isConnected {
-                // Close existing connection before starting a new one
-                try await connection?.close()
-
-                // Connect
-                logger.debug("Connecting to broker at \(url)")
-                self.connection = try await AMQPConnection.connect(
-                    use: self.eventLoop, from: self.config)
-            }
-
+            // Then open a channel
             self.channel = try await connection!.openChannel()
             return self.channel!
         }
         return channel
     }
 
+    public func waitForConnection() async throws {
+        while true {
+            try await Task.sleep(for: WaitForConnectionSleepInterval)
+            if isConnected() {
+                break
+            }
+        }
+    }
+
     public func close() async throws {
-        if isConnected() {
-            logger.debug("Closing connection to \(url)")
-            try await connection?.close()
-            try await channel?.close()
+        if !isConnected() {
+            return
         }
 
-        // Cleanup
-        self.connection = nil
-        self.channel = nil
+        logger.info("Closing connection to \(url)")
+        try await connection?.close()
+        try await channel?.close()
     }
 }

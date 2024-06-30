@@ -1,16 +1,19 @@
 import AMQPClient
+import Logging
 import NIO
 
 extension AMQPChannel {
     func exchangeDeclare(
         _ exchangeName: String,
-        _ exchangeOptions: ExchangeOptions
+        _ exchangeOptions: ExchangeOptions,
+        _ logger: Logger
     ) async throws {
         // Don't declare exchange if name is empty
         if exchangeName.isEmpty {
             return
         }
 
+        logger.trace("Declaring exchange \(exchangeName) with options: \(exchangeOptions)")
         try await exchangeDeclare(
             name: exchangeName,
             type: exchangeOptions.type.rawValue,
@@ -24,13 +27,15 @@ extension AMQPChannel {
 
     func queueDeclare(
         _ queueName: String,
-        _ queueOptions: QueueOptions
+        _ queueOptions: QueueOptions,
+        _ logger: Logger
     ) async throws {
         // Don't declare queue if name is empty
         if queueName.isEmpty {
             return
         }
 
+        logger.trace("Declaring queue \(queueName) with options: \(queueOptions)")
         try await queueDeclare(
             name: queueName,
             passive: queueOptions.passive,
@@ -45,13 +50,16 @@ extension AMQPChannel {
         _ queueName: String,
         _ exchangeName: String,
         _ routingKey: String,
-        _ bindingOptions: BindingOptions
+        _ bindingOptions: BindingOptions,
+        _ logger: Logger
     ) async throws {
         // Can't bind queue if queue name or exchange name is empty
         if queueName.isEmpty || exchangeName.isEmpty {
             return
         }
 
+        logger.trace(
+            "Binding queue \(queueName) to exchange \(exchangeName) with options: \(bindingOptions)")
         try await queueBind(
             queue: queueName,
             exchange: exchangeName,
@@ -62,8 +70,10 @@ extension AMQPChannel {
 
     func consume(
         _ queueName: String,
-        _ consumerOptions: ConsumerOptions
+        _ consumerOptions: ConsumerOptions,
+        _ logger: Logger
     ) async throws -> AMQPSequence<AMQPClient.AMQPResponse.Channel.Message.Delivery> {
+        logger.debug("Consuming messages from queue \(queueName)...")
         return try await basicConsume(
             queue: queueName,
             consumerTag: consumerOptions.consumerTag,
@@ -77,8 +87,10 @@ extension AMQPChannel {
         _ data: ByteBuffer,
         _ exchangeName: String = "",
         _ routingKey: String = "",
-        _ publisherOptions: PublisherOptions
+        _ publisherOptions: PublisherOptions,
+        _ logger: Logger
     ) async throws -> AMQPResponse.Channel.Basic.Published {
+        logger.debug("Publishing message to exchange \(exchangeName): \(data)")
         return try await basicPublish(
             from: data,
             exchange: exchangeName,

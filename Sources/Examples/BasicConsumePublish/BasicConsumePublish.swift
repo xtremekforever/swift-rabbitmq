@@ -2,9 +2,9 @@ import Logging
 import NIO
 import RabbitMq
 
-var logger = Logger(label: "BasicConsumePublish")
-logger.logLevel = .debug
-let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F", logger: logger)
+// Create connection and connect to the broker
+let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F")
+try await connection.connect()
 
 // Exchange options are shared between consumer/publisher
 let exchangeOptions = ExchangeOptions(
@@ -12,6 +12,7 @@ let exchangeOptions = ExchangeOptions(
     autoDelete: true
 )
 
+// Create consumer and start consuming
 print("Starting test Consumer...")
 let consumer = RabbitMq.Consumer(
     connection,
@@ -27,6 +28,7 @@ let consumeTask = Task {
     }
 }
 
+// Create publisher and start publishing
 print("Starting test Publisher...")
 let publisher = RabbitMq.Publisher(
     connection,
