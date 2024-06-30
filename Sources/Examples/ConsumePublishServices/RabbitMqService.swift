@@ -21,27 +21,15 @@ actor RabbitMqService: Service, Connectable {
     }
 
     func run() async throws {
+        logger.info("Starting up RabbitMqService...")
+
         var tls = TLSConfiguration.makeClientConfiguration()
         tls.certificateVerification = .none
         connection = try Connection(connectionUrl, tls: tls, logger: logger)
 
-        logger.info("Starting up RabbitMqService...")
-
         // Connection monitoring & recovery pattern
-        while !Task.isShuttingDownGracefully {
-            if let conn = self.connection {
-                if await conn.isConnected() {
-                    try await Task.sleep(for: .seconds(1))
-                    continue
-                }
-
-                do {
-                    try await conn.connect()
-                } catch {
-                    logger.error("Unable to connect to broker at \(connectionUrl): \(error)")
-                    try await Task.sleep(for: .seconds(10))
-                }
-            }
+        if let conn = connection {
+            try await conn.monitorConnection(reconnectionInterval: .seconds(15))
         }
 
         logger.info("Shutting down RabbitMqService...")

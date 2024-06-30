@@ -6,6 +6,7 @@ import NIOSSL
 import Semaphore
 
 let WaitForConnectionSleepInterval = Duration.milliseconds(100)
+let MonitorConnectionPollInterval = Duration.milliseconds(500)
 
 public actor Connection {
     private let url: String
@@ -49,6 +50,20 @@ public actor Connection {
             self.connection = try await AMQPConnection.connect(use: self.eventLoop, from: self.config)
             logger.info("Connected to broker at \(url)")
         }
+    }
+
+    public func monitorConnection(reconnectionInterval: Duration = .seconds(10)) async throws {
+        if isConnected() {
+            try await Task.sleep(for: MonitorConnectionPollInterval)
+        } else {
+            do {
+                try await connect()
+            } catch {
+                logger.error("Unable to connect to broker at \(url): \(error)")
+                try await Task.sleep(for: reconnectionInterval)
+            }
+        }
+        try await monitorConnection(reconnectionInterval: reconnectionInterval)
     }
 
     public func getChannel() async throws -> AMQPChannel? {
