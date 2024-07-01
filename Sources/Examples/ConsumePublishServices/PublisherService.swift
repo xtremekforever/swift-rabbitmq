@@ -19,7 +19,7 @@ struct PublisherService: Service {
         let connection = try await rabbitMqConnectable.waitForConnection()
 
         let publisher = Publisher(
-            connection, "ServiceExampleContract", publisherOptions: .init(retryInterval: .seconds(15))
+            connection, "ServiceExampleContract"
         )
 
         while !Task.isShuttingDownGracefully {
@@ -29,7 +29,7 @@ struct PublisherService: Service {
                 let json = String(data: jsonData, encoding: .utf8)
             {
                 logger.info("Publishing contract: \(contract)")
-                try await publisher.publish(json)
+                try await publisher.retryingPublish(json, retryInterval: .seconds(15))
                 try await Task.sleep(for: .seconds(1))
             }
         }

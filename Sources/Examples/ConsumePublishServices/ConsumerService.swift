@@ -34,9 +34,11 @@ struct ConsumerService: Service {
 
         let consumer = Consumer(
             connection, "ConsumerServiceQueue", "ServiceExampleContract",
-            consumerOptions: .init(noAck: true, retryInterval: .seconds(15))
+            consumerOptions: .init(noAck: true)
         )
-        for await message in try await consumer.consume().cancelOnGracefulShutdown() {
+
+        let stream = try await consumer.retryingConsume(retryInterval: .seconds(15)).cancelOnGracefulShutdown()
+        for await message in stream {
             processMessage(message)
         }
     }

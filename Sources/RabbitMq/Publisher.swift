@@ -41,7 +41,13 @@ public struct Publisher: Sendable {
     }
 
     public func publish(_ data: String, routingKey: String = "") async throws {
-        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+        try await performPublish(data, routingKey: routingKey)
+    }
+
+    public func retryingPublish(_ data: String, routingKey: String = "", retryInterval: Duration = .seconds(30))
+        async throws
+    {
+        while !Task.isCancelled {
             do {
                 try await performPublish(data, routingKey: routingKey)
                 break
@@ -50,25 +56,13 @@ public struct Publisher: Sendable {
                 logger.error("Connection closed while publishing from exchange \(exchangeName): \(error)")
 
                 // Wait for connection again (retry interval does not factor in when waiting for reconnection)
-                if publisherOptions.retryInterval != nil {
-                    try await connection.waitForConnection()
-                    continue
-                }
-
-                // Otherwise rethrow error
-                throw error
+                try await connection.waitForConnection()
             } catch {
                 logger.error("Error publishing message to exchange \(exchangeName): \(error)")
 
                 // Publish retry (if enabled)
-                if let retryInterval = publisherOptions.retryInterval {
-                    logger.debug("Will retry publishing to exchange \(exchangeName) in \(retryInterval)")
-                    try await Task.sleep(for: retryInterval)
-                    continue
-                }
-
-                // Rethrow error if we are not retrying publish
-                throw error
+                logger.debug("Will retry publishing to exchange \(exchangeName) in \(retryInterval)")
+                try await Task.sleep(for: retryInterval)
             }
         }
     }

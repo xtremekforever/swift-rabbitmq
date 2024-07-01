@@ -14,7 +14,6 @@ public actor Connection {
     private let url: String
     private let eventLoop: EventLoop
     private let config: AMQPConnectionConfiguration
-    private let reconnectionInterval: Duration
     let logger: Logger  // shared to users of Connection
 
     private var channel: AMQPChannel?
@@ -34,16 +33,19 @@ public actor Connection {
         _ url: String = "",
         eventLoop: EventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1).next(),
         tls: TLSConfiguration = TLSConfiguration.makeClientConfiguration(),
-        reconnectionInterval: Duration = .seconds(10),
         logger: Logger = Logger(label: "\(Connection.self)")
     ) throws {
         self.url = url
         self.eventLoop = eventLoop
         self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
-        self.reconnectionInterval = reconnectionInterval
         self.logger = logger
 
         self.newConsumers = AsyncChannel<Consumer>()
+    }
+
+    // Internal use only, for retrying consumers functionality
+    func addConsumer(consumer: Consumer) async {
+        await newConsumers.send(consumer)
     }
 
     // Method to use to connect without monitoring, will be called when using reuseChannel()
@@ -60,11 +62,7 @@ public actor Connection {
         }
     }
 
-    func addConsumer(consumer: Consumer) async {
-        await newConsumers.send(consumer)
-    }
-
-    public nonisolated func run() async throws {
+    public nonisolated func retryingConnect(reconnectionInterval: Duration = .seconds(10)) async throws {
         try await withThrowingTaskGroup(of: Void.self) { group in
             // Monitor connection task
             group.addTask {
@@ -80,7 +78,7 @@ public actor Connection {
                         try await self.connect()
                     } catch {
                         self.logger.error("Unable to connect to broker at \(self.url): \(error)")
-                        try await Task.sleep(for: self.reconnectionInterval)
+                        try await Task.sleep(for: reconnectionInterval)
                     }
                 }
                 self.newConsumers.finish()

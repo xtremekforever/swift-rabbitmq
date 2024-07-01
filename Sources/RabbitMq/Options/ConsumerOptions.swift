@@ -5,7 +5,6 @@ public struct ConsumerOptions: Sendable {
     var noAck: Bool
     var exclusive: Bool
     var args: Table
-    var retryInterval: Duration?
 
     public init(
         consumerTag: String = "",
@@ -18,6 +17,5 @@ public struct ConsumerOptions: Sendable {
         self.noAck = noAck
         self.exclusive = exclusive
         self.args = args
-        self.retryInterval = retryInterval
     }
 }

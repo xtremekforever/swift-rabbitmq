@@ -29,7 +29,7 @@ struct RabbitMqService: Service, Connectable {
         logger.info("Starting up RabbitMqService...")
 
         // Connection monitoring & recovery pattern
-        try await connection.run()
+        try await connection.retryingConnect(reconnectionInterval: .seconds(15))
 
         logger.info("Shutting down RabbitMqService...")
     }
