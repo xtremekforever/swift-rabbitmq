@@ -77,7 +77,7 @@ public actor Consumer: Sendable {
                     logger.trace("Consumed message from queue \(queueName): \(message)")
                     await channel.send(String(buffer: message.body))
                 }
-                logger.warning("Consumer for queue \(queueName) completed...")
+                logger.debug("Consumer for queue \(queueName) completed...")
 
                 // Exit on cancellation
                 if Task.isCancelled {

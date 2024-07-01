@@ -5,7 +5,6 @@ import Logging
 import NIO
 import NIOSSL
 import Semaphore
-import ServiceLifecycle
 
 let WaitForConnectionSleepInterval = Duration.milliseconds(100)
 let MonitorConnectionPollInterval = Duration.milliseconds(500)
@@ -66,7 +65,7 @@ public actor Connection {
         try await withThrowingTaskGroup(of: Void.self) { group in
             // Monitor connection task
             group.addTask {
-                while !Task.isCancelled && !Task.isShuttingDownGracefully {
+                while !Task.isCancelled {
                     // Ignore if connected
                     if await self.isConnected {
                         try await Task.sleep(for: MonitorConnectionPollInterval)
@@ -82,12 +81,16 @@ public actor Connection {
                     }
                 }
                 self.newConsumers.finish()
+
+                // Close connection at the end
+                try await self.close()
             }
 
             for try await consumer in newConsumers {
                 group.addTask { try await consumer.run() }
             }
 
+            // Cancel all consumers if any exits
             try await group.next()
             group.cancelAll()
         }
@@ -109,7 +112,7 @@ public actor Connection {
     }
 
     public func waitForConnection() async throws {
-        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+        while !Task.isCancelled {
             try await Task.sleep(for: WaitForConnectionSleepInterval)
             if isConnected {
                 break
