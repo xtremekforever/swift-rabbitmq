@@ -3,17 +3,22 @@ import NIOSSL
 import RabbitMq
 import ServiceLifecycle
 
-actor RabbitMqService: Service, Connectable {
+// Service that creates RabbitMq connection & monitors it until shutdown
+struct RabbitMqService: Service, Connectable {
     private let connectionUrl: String
     private let logger: Logger
-    private var connection: Connection?
+    private let connection: Connection
 
     init(
         _ connectionUrl: String,
         _ logger: Logger = Logger(label: String(describing: RabbitMqService.self))
-    ) {
+    ) throws {
         self.connectionUrl = connectionUrl
         self.logger = logger
+
+        var tls = TLSConfiguration.makeClientConfiguration()
+        tls.certificateVerification = .none
+        connection = try Connection(connectionUrl, tls: tls, logger: logger)
     }
 
     func getConnection() -> Connection? {
@@ -23,16 +28,10 @@ actor RabbitMqService: Service, Connectable {
     func run() async throws {
         logger.info("Starting up RabbitMqService...")
 
-        var tls = TLSConfiguration.makeClientConfiguration()
-        tls.certificateVerification = .none
-        connection = try Connection(connectionUrl, tls: tls, logger: logger)
-
         // Connection monitoring & recovery pattern
-        if let conn = connection {
-            try await conn.monitorConnection(reconnectionInterval: .seconds(15))
-        }
+        try await connection.monitorConnection(reconnectionInterval: .seconds(15))
 
         logger.info("Shutting down RabbitMqService...")
-        try await connection?.close()
+        try await connection.close()
     }
 }
