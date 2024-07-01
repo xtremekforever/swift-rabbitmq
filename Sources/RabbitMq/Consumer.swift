@@ -2,6 +2,7 @@ import AMQPClient
 import AsyncAlgorithms
 import Logging
 import NIO
+import ServiceLifecycle
 
 public struct Consumer: Sendable {
     private let connection: Connection
@@ -13,6 +14,8 @@ public struct Consumer: Sendable {
     private let bindingOptions: BindingOptions
     private let consumerOptions: ConsumerOptions
     private let logger: Logger
+
+    private let asyncChannel = AsyncChannel<String>()
 
     public init(
         _ connection: Connection,
@@ -35,46 +38,22 @@ public struct Consumer: Sendable {
         self.logger = connection.logger
     }
 
-    private func consumerSequence() async throws -> AMQPSequence<AMQPResponse.Channel.Message.Delivery> {
-        do {
-            guard let channel = try await connection.getChannel() else {
-                throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
-            }
-
-            // Declare exchange (only if declare = true)
-            try await channel.exchangeDeclare(exchangeName, exchangeOptions, logger)
-
-            // Declare queue (only if declare = true)
-            try await channel.queueDeclare(queueName, queueOptions, logger)
-
-            // Declare binding to exhange if provided
-            try await channel.queueBind(queueName, exchangeName, routingKey, bindingOptions, logger)
-
-            // Consume on queue
-            return try await channel.consume(queueName, consumerOptions, logger)
-        } catch AMQPConnectionError.connectionClosed(let replyCode, let replyText) {
-            let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
-            logger.error("Connection closed while consuming from queue \(queueName): \(error)")
-
-            // Wait for connection again (retry interval does not factor in when waiting for reconnection)
-            if consumerOptions.retryInterval != nil {
-                try await connection.waitForConnection()
-                return try await consumerSequence()
-            }
-
-            // Otherwise rethrow error
-            throw error
-        } catch {
-            logger.error("Error consuming from queue \(queueName): \(error)")
-
-            // Consume retry (if enabled)
-            if try await performRetry() {
-                return try await consumerSequence()
-            }
-
-            // Rethrow error if we are not retrying consume
-            throw error
+    private func performConsume() async throws -> AMQPSequence<AMQPResponse.Channel.Message.Delivery> {
+        guard let channel = try await connection.getChannel() else {
+            throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
         }
+
+        // Declare exchange (only if declare = true)
+        try await channel.exchangeDeclare(exchangeName, exchangeOptions, logger)
+
+        // Declare queue (only if declare = true)
+        try await channel.queueDeclare(queueName, queueOptions, logger)
+
+        // Declare binding to exhange if provided
+        try await channel.queueBind(queueName, exchangeName, routingKey, bindingOptions, logger)
+
+        // Consume on queue
+        return try await channel.consume(queueName, consumerOptions, logger)
     }
 
     private func performRetry() async throws -> Bool {
@@ -87,29 +66,56 @@ public struct Consumer: Sendable {
         return false
     }
 
-    public func consume() async throws -> AsyncChannel<String> {
-        let asyncChannel = AsyncChannel<String>()
+    func run() async throws {
+        while !Task.isCancelled {
+            do {
+                let sequence = try await performConsume()
 
-        Task {
-            while !Task.isCancelled {
-                do {
-                    let sequence = try await consumerSequence()
-
-                    // Consume sequence and add to AsyncChannel
-                    for try await message in sequence {
-                        logger.trace("Consumed message from queue \(queueName): \(message)")
-                        await asyncChannel.send(String(buffer: message.body))
-                    }
-                } catch {
-                    logger.error("Error occured while consuming from queue \(queueName): \(error)")
-                    if try await !performRetry() {
-                        break
-                    }
+                // Consume sequence and add to AsyncChannel
+                for try await message in sequence {
+                    logger.trace("Consumed message from queue \(queueName): \(message)")
+                    await asyncChannel.send(String(buffer: message.body))
                 }
-            }
-            asyncChannel.finish()
-        }
+                logger.warning("Consumer for queue \(queueName) completed...")
 
+                // Exit on graceful shutdown
+                if Task.isShuttingDownGracefully {
+                    break
+                }
+
+                // Consume retry (if enabled)
+                if try await !performRetry() {
+                    break
+                }
+            } catch AMQPConnectionError.connectionClosed(let replyCode, let replyText) {
+                let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
+                logger.error("Connection closed while consuming from queue \(queueName): \(error)")
+
+                // Wait for connection again (retry interval does not factor in when waiting for reconnection)
+                if consumerOptions.retryInterval != nil {
+                    try await connection.waitForConnection()
+                    continue
+                }
+
+                // Otherwise rethrow error
+                throw error
+            } catch {
+                logger.error("Error consuming from queue \(queueName): \(error)")
+
+                // Consume retry (if enabled)
+                if try await performRetry() {
+                    continue
+                }
+
+                // Rethrow error if we are not retrying consume
+                throw error
+            }
+        }
+        asyncChannel.finish()
+    }
+
+    public func consume() async throws -> AsyncChannel<String> {
+        await connection.addConsumer(consumer: self)
         return asyncChannel
     }
 }
