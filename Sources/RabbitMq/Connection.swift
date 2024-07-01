@@ -111,7 +111,7 @@ public actor Connection {
     }
 
     public func waitForConnection() async throws {
-        while true {
+        while !Task.isCancelled && !Task.isShuttingDownGracefully {
             try await Task.sleep(for: WaitForConnectionSleepInterval)
             if isConnected {
                 break

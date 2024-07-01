@@ -12,13 +12,13 @@ var logger = Logger(label: "ConsumePublishServices")
 
 let rabbitMqService = try RabbitMqService("amqp://guest:guest@localhost/%2f", logger)
 let consumerService = ConsumerService(rabbitMqService, logger)
-//let publisherService = PublisherService(rabbitMqService, logger)
+let publisherService = PublisherService(rabbitMqService, logger)
 let serviceGroup = ServiceGroup(
     configuration: .init(
         services: [
             .init(service: rabbitMqService),
             .init(service: consumerService),
-            //.init(service: publisherService),
+            .init(service: publisherService),
         ],
         gracefulShutdownSignals: [.sigterm],
         logger: logger
