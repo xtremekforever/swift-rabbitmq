@@ -19,6 +19,13 @@ public actor Connection {
 
     private let connectionSemaphore = AsyncSemaphore(value: 1)
 
+    public var isConnected: Bool {
+        if let conn = self.connection {
+            return conn.isConnected
+        }
+        return false
+    }
+
     public init(
         _ url: String = "",
         eventLoop: EventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1).next(),
@@ -31,13 +38,6 @@ public actor Connection {
         self.logger = logger
     }
 
-    public func isConnected() -> Bool {
-        if let conn = self.connection {
-            return conn.isConnected
-        }
-        return false
-    }
-
     // Method to use to connect without monitoring, will be called when using reuseChannel()
     public func connect() async throws {
         // Semaphore is used in the context of this method to avoid multiple tasks
@@ -45,7 +45,7 @@ public actor Connection {
         await connectionSemaphore.wait()
         defer { connectionSemaphore.signal() }
 
-        if !isConnected() {
+        if !isConnected {
             logger.info("Connecting to broker at \(url)")
             self.connection = try await AMQPConnection.connect(use: self.eventLoop, from: self.config)
             logger.info("Connected to broker at \(url)")
@@ -53,7 +53,7 @@ public actor Connection {
     }
 
     public func monitorConnection(reconnectionInterval: Duration = .seconds(10)) async throws {
-        if isConnected() {
+        if isConnected {
             try await Task.sleep(for: MonitorConnectionPollInterval)
         } else {
             do {
@@ -68,7 +68,7 @@ public actor Connection {
 
     public func getChannel() async throws -> AMQPChannel? {
         // Not connected
-        guard isConnected() else {
+        guard isConnected else {
             return nil
         }
 
@@ -84,14 +84,14 @@ public actor Connection {
     public func waitForConnection() async throws {
         while true {
             try await Task.sleep(for: WaitForConnectionSleepInterval)
-            if isConnected() {
+            if isConnected {
                 break
             }
         }
     }
 
     public func close() async throws {
-        if !isConnected() {
+        if !isConnected {
             return
         }
 
