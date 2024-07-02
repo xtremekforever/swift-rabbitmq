@@ -47,7 +47,11 @@ public struct Publisher: Sendable {
     public func retryingPublish(_ data: String, routingKey: String = "", retryInterval: Duration = .seconds(30))
         async throws
     {
-        while !Task.isCancelled {
+        // Wait for connection before starting
+        // TODO: Add timeout and factor into retry interval
+        try await connection.waitForConnection()
+
+        while !Task.isCancelled && !Task.isShuttingDownGracefully {
             do {
                 try await performPublish(data, routingKey: routingKey)
                 break

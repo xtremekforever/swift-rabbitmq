@@ -29,13 +29,7 @@ struct RabbitMqService: Service, Connectable {
         logger.info("Starting up RabbitMqService...")
 
         // Connection monitoring & recovery pattern
-        do {
-            try await cancelWhenGracefulShutdown {
-                try await connection.retryingConnect(reconnectionInterval: .seconds(15))
-            }
-        } catch (_ as CancellationError) {
-            // ignore CancellationError...
-        }
+        try await connection.run(reconnectionInterval: Duration.seconds(15))
 
         logger.info("Shutting down RabbitMqService...")
     }

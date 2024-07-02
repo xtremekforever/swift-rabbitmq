@@ -70,7 +70,11 @@ public actor Consumer: Sendable {
             return
         }
 
-        while !Task.isCancelled {
+        // Wait for connection before starting
+        // TODO: Add timeout and factor into retry interval
+        try await connection.waitForConnection()
+
+        while !Task.isCancelled && !Task.isShuttingDownGracefully {
             do {
                 // Consume sequence and add to AsyncChannel
                 for try await message in try await performConsume() {
@@ -80,7 +84,7 @@ public actor Consumer: Sendable {
                 logger.debug("Consumer for queue \(queueName) completed...")
 
                 // Exit on cancellation
-                if Task.isCancelled {
+                if Task.isCancelled || Task.isShuttingDownGracefully {
                     break
                 }
 

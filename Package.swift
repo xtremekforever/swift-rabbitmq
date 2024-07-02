@@ -31,6 +31,7 @@ let package = Package(
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "Semaphore", package: "Semaphore"),
+                .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ]
         ),
         .executableTarget(
@@ -41,8 +42,7 @@ let package = Package(
         .executableTarget(
             name: "ConsumePublishServices",
             dependencies: [
-                "RabbitMq",
-                .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
+                "RabbitMq"
             ],
             path: "Sources/Examples/ConsumePublishServices"
         ),

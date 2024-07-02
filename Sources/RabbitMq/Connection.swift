@@ -5,9 +5,9 @@ import Logging
 import NIO
 import NIOSSL
 import Semaphore
+import ServiceLifecycle
 
-let WaitForConnectionSleepInterval = Duration.milliseconds(100)
-let MonitorConnectionPollInterval = Duration.milliseconds(500)
+let PollingConnectionSleepInterval = Duration.milliseconds(100)
 
 public actor Connection {
     private let url: String
@@ -61,29 +61,44 @@ public actor Connection {
         }
     }
 
-    public nonisolated func retryingConnect(reconnectionInterval: Duration = .seconds(10)) async throws {
+    private func gracefulCancellableDelay(timeout: Duration) async throws {
+        for await _ in AsyncTimerSequence(interval: timeout, clock: .continuous).cancelOnGracefulShutdown() {
+            break
+        }
+    }
+
+    private func monitorConnection(reconnectionInterval: Duration) async throws {
+        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+            // Ignore if connected
+            if isConnected {
+                try await Task.sleep(for: PollingConnectionSleepInterval)
+                continue
+            }
+
+            // Connect or reconnect after interval
+            do {
+                try await self.connect()
+                continue
+            } catch {
+                logger.error("Unable to connect to broker at \(self.url): \(error)")
+                try await gracefulCancellableDelay(timeout: reconnectionInterval)
+            }
+        }
+    }
+
+    public nonisolated func run(reconnectionInterval: Duration?) async throws {
         try await withThrowingTaskGroup(of: Void.self) { group in
-            // Monitor connection task
-            group.addTask {
-                while !Task.isCancelled {
-                    // Ignore if connected
-                    if await self.isConnected {
-                        try await Task.sleep(for: MonitorConnectionPollInterval)
-                        continue
-                    }
+            if let interval = reconnectionInterval {
+                group.addTask {
+                    // Monitor connection task
+                    try await self.monitorConnection(reconnectionInterval: interval)
 
-                    // Connect or reconnect after interval
-                    do {
-                        try await self.connect()
-                    } catch {
-                        self.logger.error("Unable to connect to broker at \(self.url): \(error)")
-                        try await Task.sleep(for: reconnectionInterval)
-                    }
+                    // Stop receiving new consumers
+                    self.newConsumers.finish()
+
+                    // Close connection at the end
+                    try? await self.close()
                 }
-                self.newConsumers.finish()
-
-                // Close connection at the end
-                try await self.close()
             }
 
             for try await consumer in newConsumers {
@@ -112,8 +127,8 @@ public actor Connection {
     }
 
     public func waitForConnection() async throws {
-        while !Task.isCancelled {
-            try await Task.sleep(for: WaitForConnectionSleepInterval)
+        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+            try await Task.sleep(for: PollingConnectionSleepInterval)
             if isConnected {
                 break
             }

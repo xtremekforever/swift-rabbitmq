@@ -16,22 +16,28 @@ struct PublisherService: Service {
     }
 
     func run() async throws {
-        let connection = try await rabbitMqConnectable.waitForConnection()
+        do {
+            let connection = try await rabbitMqConnectable.waitForConnection()
 
-        let publisher = Publisher(
-            connection, "ServiceExampleContract"
-        )
+            let publisher = Publisher(
+                connection, "ServiceExampleContract"
+            )
 
-        while !Task.isShuttingDownGracefully {
-            let contract = ServiceExampleContract(id: UUID(), value: "Hi there!")
-            let encoder = JSONEncoder()
-            if let jsonData = try? encoder.encode(contract),
-                let json = String(data: jsonData, encoding: .utf8)
-            {
-                logger.info("Publishing contract: \(contract)")
-                try await publisher.retryingPublish(json, retryInterval: .seconds(15))
-                try await Task.sleep(for: .seconds(1))
+            while !Task.isShuttingDownGracefully {
+                let contract = ServiceExampleContract(id: UUID(), value: "Hi there!")
+                let encoder = JSONEncoder()
+                if let jsonData = try? encoder.encode(contract),
+                    let json = String(data: jsonData, encoding: .utf8)
+                {
+                    logger.info("Publishing contract: \(contract)")
+                    try await publisher.retryingPublish(json, retryInterval: .seconds(15))
+                    try await Task.sleep(for: .seconds(1))
+                }
             }
+        } catch _ as CancellationError {
+            logger.warning("CancellationError from Consumer, this task will exit!")
+        } catch {
+            logger.error("Publisher error: \(error)")
         }
     }
 }
