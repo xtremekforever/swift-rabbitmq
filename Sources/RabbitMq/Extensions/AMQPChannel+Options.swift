@@ -73,7 +73,7 @@ extension AMQPChannel {
         _ consumerOptions: ConsumerOptions,
         _ logger: Logger
     ) async throws -> AMQPSequence<AMQPClient.AMQPResponse.Channel.Message.Delivery> {
-        logger.debug("Consuming messages from queue \(queueName)...")
+        logger.trace("Consuming messages from queue \(queueName)...")
         return try await basicConsume(
             queue: queueName,
             consumerTag: consumerOptions.consumerTag,
@@ -90,7 +90,7 @@ extension AMQPChannel {
         _ publisherOptions: PublisherOptions,
         _ logger: Logger
     ) async throws -> AMQPResponse.Channel.Basic.Published {
-        logger.debug("Publishing message to exchange \(exchangeName): \(data)")
+        logger.trace("Publishing message to exchange \(exchangeName)")
         return try await basicPublish(
             from: data,
             exchange: exchangeName,
