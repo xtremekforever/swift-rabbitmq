@@ -86,8 +86,8 @@ public actor Connection {
         }
     }
 
-    public nonisolated func run(reconnectionInterval: Duration?) async throws {
-        try await withThrowingTaskGroup(of: Void.self) { group in
+    public func run(reconnectionInterval: Duration?) async throws {
+        try await withThrowingDiscardingTaskGroup { group in
             if let interval = reconnectionInterval {
                 group.addTask {
                     // Monitor connection task
@@ -105,8 +105,7 @@ public actor Connection {
                 group.addTask { try await consumer.run() }
             }
 
-            // Cancel all consumers if any exits
-            try await group.next()
+            // Cancel all tasks on exit
             group.cancelAll()
         }
     }
