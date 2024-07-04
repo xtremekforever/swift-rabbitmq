@@ -128,10 +128,10 @@ public actor Connection {
 
     public func waitForConnection() async throws {
         while !Task.isCancelled && !Task.isShuttingDownGracefully {
-            try await Task.sleep(for: PollingConnectionSleepInterval)
             if isConnected {
                 break
             }
+            try await Task.sleep(for: PollingConnectionSleepInterval)
         }
     }
 

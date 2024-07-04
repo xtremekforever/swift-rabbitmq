@@ -30,22 +30,16 @@ struct ConsumerService: Service {
     }
 
     func run() async throws {
-        do {
-            let connection = try await rabbitMqConnectable.waitForConnection()
+        let connection = try await rabbitMqConnectable.waitGetConnection()
 
-            let consumer = Consumer(
-                connection, "ConsumerServiceQueue", "ServiceExampleContract",
-                consumerOptions: .init(noAck: true)
-            )
+        let consumer = Consumer(
+            connection, "ConsumerServiceQueue", "ServiceExampleContract",
+            consumerOptions: .init(noAck: true)
+        )
 
-            let stream = try await consumer.retryingConsume(retryInterval: .seconds(15)).cancelOnGracefulShutdown()
-            for await message in stream {
-                processMessage(message)
-            }
-        } catch _ as CancellationError {
-            logger.warning("CancellationError from Consumer, this task will exit!")
-        } catch {
-            logger.error("Consumer error: \(error)")
+        let stream = try await consumer.retryingConsume(retryInterval: .seconds(15)).cancelOnGracefulShutdown()
+        for await message in stream {
+            processMessage(message)
         }
     }
 }
