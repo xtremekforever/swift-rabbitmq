@@ -4,7 +4,6 @@ import Foundation
 import Logging
 import NIO
 import NIOSSL
-import Semaphore
 import ServiceLifecycle
 
 let PollingConnectionSleepInterval = Duration.milliseconds(100)
@@ -19,7 +18,7 @@ public actor Connection {
     private var connection: AMQPConnection?
     private let newConsumers: AsyncChannel<Consumer>
 
-    private let connectionSemaphore = AsyncSemaphore(value: 1)
+    private var connecting = false
 
     public var isConnected: Bool {
         if let conn = self.connection {
@@ -49,12 +48,10 @@ public actor Connection {
 
     // Method to use to connect without monitoring, will be called when using reuseChannel()
     public func connect() async throws {
-        // Semaphore is used in the context of this method to avoid multiple tasks
-        // from connecting at the same time
-        await connectionSemaphore.wait()
-        defer { connectionSemaphore.signal() }
+        if !isConnected && !connecting {
+            connecting = true
+            defer { connecting = false }
 
-        if !isConnected {
             logger.info("Connecting to broker at \(url)")
             self.connection = try await AMQPConnection.connect(use: self.eventLoop, from: self.config)
             logger.info("Connected to broker at \(url)")
