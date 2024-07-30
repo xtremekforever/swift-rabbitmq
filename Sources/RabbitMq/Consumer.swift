@@ -16,7 +16,8 @@ public actor Consumer: Sendable {
 
     // Retrying functionality
     private var consumeRetryInterval: Duration?
-    private var consumeChannel: AsyncChannel<String>?
+    var consumeChannel: AsyncChannel<String>?
+    var cancellationChannel: AsyncChannel<Void>?
 
     public init(
         _ connection: Connection,
@@ -62,7 +63,7 @@ public actor Consumer: Sendable {
         try await Task.sleep(for: retryInterval)
     }
 
-    func run() async throws {
+    private func performRetryingConsume() async throws {
         guard let retryInterval = consumeRetryInterval,
             let channel = consumeChannel
         else {
@@ -104,6 +105,18 @@ public actor Consumer: Sendable {
             }
         }
         channel.finish()
+        cancellationChannel?.finish()
+    }
+
+    func run() async throws {
+        try await withThrowingDiscardingTaskGroup { group in
+            group.addTask { try await self.performRetryingConsume() }
+
+            await cancellationChannel!.waitUntilFinished()
+            self.logger.debug("Received cancellation for consumer on queue \(queueName)")
+
+            group.cancelAll()
+        }
     }
 
     public func consume() async throws -> AnyAsyncSequence<String> {
@@ -114,12 +127,13 @@ public actor Consumer: Sendable {
         )
     }
 
-    public func retryingConsume(retryInterval: Duration = .seconds(30)) async throws -> AsyncChannel<String> {
+    public func retryingConsume(retryInterval: Duration = .seconds(30)) async throws -> ConsumerChannel<String> {
         self.consumeRetryInterval = retryInterval
         self.consumeChannel = AsyncChannel<String>()
+        self.cancellationChannel = AsyncChannel<Void>()
 
         await connection.addConsumer(consumer: self)
 
-        return self.consumeChannel!
+        return ConsumerChannel(consumeChannel: consumeChannel!, cancellationChannel: cancellationChannel!)
     }
 }

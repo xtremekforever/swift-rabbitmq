@@ -8,7 +8,7 @@ struct ServiceExampleContract: Codable {
 }
 
 var logger = Logger(label: "ConsumePublishServices")
-//logger.logLevel = .debug
+logger.logLevel = .debug
 
 let rabbitMqService = try RabbitMqService("amqp://guest:guest@localhost/%2f", logger)
 let consumerService = ConsumerService(rabbitMqService, logger)
