@@ -8,8 +8,8 @@ struct RetryingConsumer: Sendable {
     let logger: Logger
 
     let retryInterval: Duration
-    let consumeChannel = AsyncChannel<String>()
-    let cancellationChannel = AsyncChannel<Void>()
+    let consumerChannel = ConsumerChannel(
+        consumeChannel: AsyncChannel<String>(), cancellationChannel: AsyncChannel<Void>())
 
     init(
         _ connection: Connection,
@@ -26,10 +26,10 @@ struct RetryingConsumer: Sendable {
         try await withThrowingDiscardingTaskGroup { group in
             group.addTask {
                 try await self.performRetryingConsume()
-                self.cancellationChannel.finish()
+                self.consumerChannel.cancellationChannel.finish()
             }
 
-            await cancellationChannel.waitUntilFinished()
+            await consumerChannel.cancellationChannel.waitUntilFinished()
             logger.debug("Received cancellation for consumer on queue \(configuration.queueName)")
 
             group.cancelAll()
@@ -49,7 +49,7 @@ struct RetryingConsumer: Sendable {
                 // Consume sequence and add to AsyncChannel
                 for try await message in try await connection.performConsume(configuration) {
                     logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
-                    await consumeChannel.send(String(buffer: message.body))
+                    await consumerChannel.consumeChannel.send(String(buffer: message.body))
                 }
                 logger.debug("Consumer for queue \(configuration.queueName) completed...")
 
@@ -77,12 +77,12 @@ struct RetryingConsumer: Sendable {
                 try await performRetry(retryInterval)
             }
         }
-        consumeChannel.finish()
+        consumerChannel.consumeChannel.finish()
     }
 
     func consume() async throws -> ConsumerChannel<String> {
         // Add consumer to
         await connection.addRetryingConsumer(consumer: self)
-        return ConsumerChannel(consumeChannel: consumeChannel, cancellationChannel: cancellationChannel)
+        return consumerChannel
     }
 }

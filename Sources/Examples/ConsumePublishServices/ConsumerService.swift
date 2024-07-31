@@ -37,8 +37,8 @@ struct ConsumerService: Service {
             consumerOptions: .init(noAck: true)
         )
 
-        let consumerChannel: ConsumerChannel<String> = try await consumer.retryingConsume(retryInterval: .seconds(15))
-        for await message in consumerChannel.consumeChannel.cancelOnGracefulShutdown() {
+        let events = try await consumer.retryingConsume(retryInterval: .seconds(15)).consumeChannel
+        for await message in events.cancelOnGracefulShutdown() {
             processMessage(message)
         }
     }
