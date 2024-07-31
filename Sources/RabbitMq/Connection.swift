@@ -16,7 +16,7 @@ public actor Connection {
 
     private var channel: AMQPChannel?
     private var connection: AMQPConnection?
-    private let newConsumers: AsyncChannel<Consumer>
+    private let newConsumers: AsyncChannel<RetryingConsumer>
 
     private var connecting = false
 
@@ -38,11 +38,11 @@ public actor Connection {
         self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
         self.logger = logger
 
-        self.newConsumers = AsyncChannel<Consumer>()
+        self.newConsumers = AsyncChannel<RetryingConsumer>()
     }
 
     // Internal use only, for retrying consumers functionality
-    func addConsumer(consumer: Consumer) async {
+    func addRetryingConsumer(consumer: RetryingConsumer) async {
         await newConsumers.send(consumer)
     }
 
