@@ -122,12 +122,18 @@ public actor Connection {
         return channel
     }
 
-    public func waitForConnection() async throws {
-        while !Task.isCancelled && !Task.isShuttingDownGracefully {
-            if isConnected {
-                break
+    public func waitForConnection(timeout: Duration) async {
+        do {
+            try await withTimeout(duration: timeout) {
+                while !Task.isCancelled && !Task.isShuttingDownGracefully {
+                    if self.isConnected {
+                        break
+                    }
+                    try await Task.sleep(for: PollingConnectionSleepInterval)
+                }
             }
-            try await Task.sleep(for: PollingConnectionSleepInterval)
+        } catch {
+            // Ignore timeout and cancellation errors
         }
     }
 

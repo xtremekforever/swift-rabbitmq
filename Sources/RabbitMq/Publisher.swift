@@ -47,20 +47,23 @@ public struct Publisher: Sendable {
     public func retryingPublish(_ data: String, routingKey: String = "", retryInterval: Duration = .seconds(30))
         async throws
     {
-        // Wait for connection before starting
-        // TODO: Add timeout and factor into retry interval
-        try await connection.waitForConnection()
+        var firstAttempt = true
 
         while !Task.isCancelled && !Task.isShuttingDownGracefully {
             do {
                 try await performPublish(data, routingKey: routingKey)
                 break
             } catch AMQPConnectionError.connectionClosed(let replyCode, let replyText) {
-                let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
-                logger.error("Connection closed while publishing from exchange \(exchangeName): \(error)")
+                if !firstAttempt {
+                    let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
+                    logger.error("Connection closed while publishing from exchange \(exchangeName): \(error)")
+                }
 
-                // Wait for connection again (retry interval does not factor in when waiting for reconnection)
-                try await connection.waitForConnection()
+                // Wait for connection, timeout after retryInterval
+
+                await self.connection.waitForConnection(timeout: retryInterval)
+
+                firstAttempt = false
             } catch {
                 logger.error("Error publishing message to exchange \(exchangeName): \(error)")
 

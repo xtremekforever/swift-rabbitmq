@@ -71,9 +71,7 @@ public actor Consumer: Sendable {
             return
         }
 
-        // Wait for connection before starting
-        // TODO: Add timeout and factor into retry interval
-        try await connection.waitForConnection()
+        var firstAttempt = true
 
         while !Task.isCancelled && !Task.isShuttingDownGracefully {
             do {
@@ -92,11 +90,15 @@ public actor Consumer: Sendable {
                 // Consume retry
                 try await performRetry(retryInterval)
             } catch AMQPConnectionError.connectionClosed(let replyCode, let replyText) {
-                let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
-                logger.error("Connection closed while consuming from queue \(queueName): \(error)")
+                if !firstAttempt {
+                    let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
+                    logger.error("Connection closed while consuming from queue \(queueName): \(error)")
+                }
 
-                // Wait for connection again
-                try await connection.waitForConnection()
+                // Wait for connection, timeout after retryInterval
+                await self.connection.waitForConnection(timeout: retryInterval)
+
+                firstAttempt = false
             } catch {
                 logger.error("Error consuming from queue \(queueName): \(error)")
 
@@ -105,12 +107,14 @@ public actor Consumer: Sendable {
             }
         }
         channel.finish()
-        cancellationChannel?.finish()
     }
 
     func run() async throws {
         try await withThrowingDiscardingTaskGroup { group in
-            group.addTask { try await self.performRetryingConsume() }
+            group.addTask {
+                try await self.performRetryingConsume()
+                await self.cancellationChannel?.finish()
+            }
 
             await cancellationChannel!.waitUntilFinished()
             self.logger.debug("Received cancellation for consumer on queue \(queueName)")
