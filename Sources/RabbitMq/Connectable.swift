@@ -5,7 +5,7 @@ public protocol Connectable: Sendable {
 }
 
 extension Connectable {
-    // This implementation will wait forever for the connection to exist + be connected to the broker
+    // This implementation will wait forever for the connection to exist
     public func waitGetConnection() async throws -> Connection {
         while !Task.isCancelled && !Task.isShuttingDownGracefully {
             if let conn = await getConnection() {

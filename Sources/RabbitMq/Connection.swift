@@ -29,7 +29,7 @@ public actor Connection {
 
     public init(
         _ url: String = "",
-        eventLoop: EventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1).next(),
+        eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         tls: TLSConfiguration = TLSConfiguration.makeClientConfiguration(),
         logger: Logger = Logger(label: "\(Connection.self)")
     ) throws {
