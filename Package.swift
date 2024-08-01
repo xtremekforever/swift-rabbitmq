@@ -15,8 +15,10 @@ let package = Package(
             targets: ["RabbitMq"])
     ],
     dependencies: [
-        .package(url: "https://github.com/funcmike/rabbitmq-nio", from: "0.1.0-beta3"),
+        .package(url: "https://github.com/xtremekforever/rabbitmq-nio", branch: "bugfix/46-double-slash-vhost"),
+        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-log", from: "1.0.0"),
+        .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -25,13 +27,22 @@ let package = Package(
             name: "RabbitMq",
             dependencies: [
                 .product(name: "AMQPClient", package: "rabbitmq-nio"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "Logging", package: "swift-log"),
+                .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ]
         ),
         .executableTarget(
             name: "BasicConsumePublish",
             dependencies: ["RabbitMq"],
             path: "Sources/Examples/BasicConsumePublish"
+        ),
+        .executableTarget(
+            name: "ConsumePublishServices",
+            dependencies: [
+                "RabbitMq"
+            ],
+            path: "Sources/Examples/ConsumePublishServices"
         ),
     ]
 )

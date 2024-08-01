@@ -1,4 +1,3 @@
-import AMQPClient
 import AMQPProtocol
 
 public struct ConsumerOptions: Sendable {
@@ -11,7 +10,8 @@ public struct ConsumerOptions: Sendable {
         consumerTag: String = "",
         noAck: Bool = false,
         exclusive: Bool = false,
-        args: Table = Table()
+        args: Table = Table(),
+        retryInterval: Duration? = nil
     ) {
         self.consumerTag = consumerTag
         self.noAck = noAck
