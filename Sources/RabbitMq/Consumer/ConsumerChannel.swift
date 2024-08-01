@@ -19,7 +19,21 @@ public final class ConsumerChannel<Element: Sendable>: Sendable {
 }
 
 extension ConsumerChannel: AsyncSequence {
-    public func makeAsyncIterator() -> AsyncChannel<Element>.AsyncIterator {
-        consumeChannel.makeAsyncIterator()
+    public struct AsyncIterator: AsyncIteratorProtocol {
+        let consumerChannel: ConsumerChannel
+        var iterator: AsyncChannel<Element>.Iterator
+
+        init(_ consumerChannel: ConsumerChannel) {
+            self.consumerChannel = consumerChannel
+            self.iterator = consumerChannel.consumeChannel.makeAsyncIterator()
+        }
+
+        public mutating func next() async -> Element? {
+            await self.iterator.next()
+        }
+    }
+
+    public func makeAsyncIterator() -> AsyncIterator {
+        AsyncIterator(self)
     }
 }
