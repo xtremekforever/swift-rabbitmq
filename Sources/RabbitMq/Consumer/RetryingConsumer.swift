@@ -8,8 +8,8 @@ struct RetryingConsumer: Sendable {
     let logger: Logger
 
     let retryInterval: Duration
-    let consumerChannel = ConsumerChannel(
-        consumeChannel: AsyncChannel<String>(), cancellationChannel: AsyncChannel<Void>())
+    let consumeChannel = AsyncChannel<String>()
+    let cancellationChannel = AsyncChannel<Void>()
 
     init(
         _ connection: Connection,
@@ -26,10 +26,10 @@ struct RetryingConsumer: Sendable {
         try await withThrowingDiscardingTaskGroup { group in
             group.addTask {
                 try await self.performRetryingConsume()
-                self.consumerChannel.cancellationChannel.finish()
+                self.cancellationChannel.finish()
             }
 
-            await consumerChannel.cancellationChannel.waitUntilFinished()
+            await cancellationChannel.waitUntilFinished()
             logger.debug("Received cancellation for consumer on queue \(configuration.queueName)")
 
             group.cancelAll()
@@ -49,7 +49,7 @@ struct RetryingConsumer: Sendable {
                 // Consume sequence and add to AsyncChannel
                 for try await message in try await connection.performConsume(configuration) {
                     logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
-                    await consumerChannel.consumeChannel.send(String(buffer: message.body))
+                    await consumeChannel.send(String(buffer: message.body))
                 }
                 logger.debug("Consumer for queue \(configuration.queueName) completed...")
 
@@ -77,12 +77,12 @@ struct RetryingConsumer: Sendable {
                 try await performRetry(retryInterval)
             }
         }
-        consumerChannel.consumeChannel.finish()
+        consumeChannel.finish()
     }
 
     func consume() async throws -> ConsumerChannel<String> {
         // Add consumer to
         await connection.addRetryingConsumer(consumer: self)
-        return consumerChannel
+        return ConsumerChannel(consumeChannel: consumeChannel, cancellationChannel: cancellationChannel)
     }
 }
