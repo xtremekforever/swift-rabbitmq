@@ -1,7 +1,7 @@
 import AsyncAlgorithms
 
 public final class ConsumerChannel<Element: Sendable>: Sendable {
-    public let consumeChannel: AsyncChannel<Element>
+    let consumeChannel: AsyncChannel<Element>
     let cancellationChannel: AsyncChannel<Void>
 
     init(consumeChannel: AsyncChannel<Element>, cancellationChannel: AsyncChannel<Void>) {
@@ -15,5 +15,11 @@ public final class ConsumerChannel<Element: Sendable>: Sendable {
 
     public func cancel() {
         cancellationChannel.finish()
+    }
+}
+
+extension ConsumerChannel: AsyncSequence {
+    public func makeAsyncIterator() -> AsyncChannel<Element>.AsyncIterator {
+        consumeChannel.makeAsyncIterator()
     }
 }
