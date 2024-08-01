@@ -129,7 +129,7 @@ public actor Connection {
                     if self.isConnected {
                         break
                     }
-                    try await Task.sleep(for: PollingConnectionSleepInterval)
+                    try await self.gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
                 }
             }
         } catch {
