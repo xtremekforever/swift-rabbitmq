@@ -15,7 +15,7 @@ let package = Package(
             targets: ["RabbitMq"])
     ],
     dependencies: [
-        .package(url: "https://github.com/xtremekforever/rabbitmq-nio", branch: "bugfix/46-double-slash-vhost"),
+        .package(url: "https://github.com/funcmike/rabbitmq-nio", branch: "main"),
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-log", from: "1.0.0"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),

@@ -3,10 +3,10 @@
     {
       "identity" : "rabbitmq-nio",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/xtremekforever/rabbitmq-nio",
+      "location" : "https://github.com/funcmike/rabbitmq-nio",
       "state" : {
-        "branch" : "bugfix/46-double-slash-vhost",
-        "revision" : "7b5c384e5175b009775074392a90e42131c1da73"
+        "branch" : "main",
+        "revision" : "315471ce99d85077ea4a136c2519d3ed81d277d1"
       }
     },
     {
@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio.git",
       "state" : {
-        "revision" : "e4abde8be0e49dc7d66e6eed651254accdcd9533",
-        "version" : "2.69.0"
+        "revision" : "4c4453b489cf76e6b3b0f300aba663eb78182fad",
+        "version" : "2.70.0"
       }
     },
     {
@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio-ssl.git",
       "state" : {
-        "revision" : "2b09805797f21c380f7dc9bedaab3157c5508efb",
-        "version" : "2.27.0"
+        "revision" : "a9fa5efd86e7ce2e5c1b6de113262e58035ca251",
+        "version" : "2.27.1"
       }
     },
     {
