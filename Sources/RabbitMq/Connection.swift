@@ -138,6 +138,9 @@ public actor Connection {
     }
 
     public func close() async throws {
+        // Stop accepting new consumers
+        newConsumers.finish()
+
         if !isConnected {
             return
         }
