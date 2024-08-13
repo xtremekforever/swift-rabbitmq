@@ -9,7 +9,7 @@ import ServiceLifecycle
 let PollingConnectionSleepInterval = Duration.milliseconds(100)
 
 public actor Connection {
-    private let url: String
+    public let url: String
     private let eventLoop: EventLoop
     private let config: AMQPConnectionConfiguration
     let logger: Logger  // shared to users of Connection
