@@ -7,8 +7,7 @@ let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F")
 try await connection.connect()
 
 // Use structured task group to run examples
-try await withThrowingTaskGroup(of: Void.self) { group in
-
+try await withThrowingDiscardingTaskGroup { group in
     // Exchange options are shared between consumer and publisher
     let exchangeOptions = ExchangeOptions(
         durable: true,
@@ -45,9 +44,6 @@ try await withThrowingTaskGroup(of: Void.self) { group in
             try await Task.sleep(for: .seconds(1))
         }
     }
-
-    try await group.next()
-    group.cancelAll()
 }
 
 print("Done!")

@@ -31,15 +31,17 @@ public struct Consumer: Sendable {
         self.logger = connection.logger
     }
 
-    public func consume() async throws -> AnyAsyncSequence<String> {
-        return AnyAsyncSequence<String>(
+    public func consume() async throws -> AnyAsyncSequence<AMQPResponse.Channel.Message.Delivery> {
+        return AnyAsyncSequence<AMQPResponse.Channel.Message.Delivery>(
             try await connection.performConsume(configuration).compactMap { message in
-                return String(buffer: message.body)
+                return message
             }
         )
     }
 
-    public func retryingConsume(retryInterval: Duration = .seconds(30)) async throws -> ConsumerChannel<String> {
+    public func retryingConsume(retryInterval: Duration = .seconds(30)) async throws -> ConsumerChannel<
+        AMQPResponse.Channel.Message.Delivery
+    > {
         return try await RetryingConsumer(
             connection, configuration, retryInterval
         ).consume()

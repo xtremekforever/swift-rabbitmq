@@ -39,7 +39,7 @@ struct ConsumerService: Service {
 
         let events = try await consumer.retryingConsume(retryInterval: .seconds(15))
         for await message in events.cancelOnGracefulShutdown() {
-            processMessage(message)
+            processMessage(String(buffer: message.body))
         }
     }
 }

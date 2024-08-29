@@ -8,7 +8,7 @@ struct RetryingConsumer: Sendable {
     let logger: Logger
 
     let retryInterval: Duration
-    let consumeChannel = AsyncChannel<String>()
+    let consumeChannel = AsyncChannel<AMQPResponse.Channel.Message.Delivery>()
     let cancellationChannel = AsyncChannel<Void>()
 
     init(
@@ -49,7 +49,7 @@ struct RetryingConsumer: Sendable {
                 // Consume sequence and add to AsyncChannel
                 for try await message in try await connection.performConsume(configuration) {
                     logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
-                    await consumeChannel.send(String(buffer: message.body))
+                    await consumeChannel.send(message)
                 }
                 logger.debug("Consumer for queue \(configuration.queueName) completed...")
 
@@ -80,7 +80,7 @@ struct RetryingConsumer: Sendable {
         consumeChannel.finish()
     }
 
-    func consume() async throws -> ConsumerChannel<String> {
+    func consume() async throws -> ConsumerChannel<AMQPResponse.Channel.Message.Delivery> {
         // Add consumer to
         await connection.addRetryingConsumer(consumer: self)
         return ConsumerChannel(consumeChannel: consumeChannel, cancellationChannel: cancellationChannel)
