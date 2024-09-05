@@ -9,9 +9,9 @@ import ServiceLifecycle
 let PollingConnectionSleepInterval = Duration.milliseconds(100)
 
 public actor Connection {
-    public let url: String
+    private(set) public var url: String
+    private var config: AMQPConnectionConfiguration
     private let eventLoop: EventLoop
-    private let config: AMQPConnectionConfiguration
     let logger: Logger  // shared to users of Connection
 
     private var channel: AMQPChannel?
@@ -19,6 +19,7 @@ public actor Connection {
     private let newConsumers: AsyncChannel<RetryingConsumer>
 
     private var connecting = false
+    private var lastConnectionAttempt: ContinuousClock.Instant? = nil
 
     public var isConnected: Bool {
         if let conn = self.connection {
@@ -29,13 +30,13 @@ public actor Connection {
 
     public init(
         _ url: String = "",
-        eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         tls: TLSConfiguration = TLSConfiguration.makeClientConfiguration(),
+        eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         logger: Logger = Logger(label: "\(Connection.self)")
     ) throws {
         self.url = url
-        self.eventLoop = eventLoop
         self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
+        self.eventLoop = eventLoop
         self.logger = logger
 
         self.newConsumers = AsyncChannel<RetryingConsumer>()
@@ -46,39 +47,63 @@ public actor Connection {
         await newConsumers.send(consumer)
     }
 
-    // Method to use to connect without monitoring, will be called when using reuseChannel()
+    // Method to use to connect without monitoring
     public func connect() async throws {
-        if !isConnected && !connecting {
-            connecting = true
-            defer { connecting = false }
-
-            logger.info("Connecting to broker at \(url)")
-            self.connection = try await AMQPConnection.connect(use: self.eventLoop, from: self.config)
-            logger.info("Connected to broker at \(url)")
+        if isConnected || connecting {
+            return
         }
+
+        // Guarded by this flag on the actor
+        connecting = true
+        defer { connecting = false }
+
+        // Actually connect
+        logger.info("Connecting to broker at \(url)")
+        self.connection = try await AMQPConnection.connect(use: self.eventLoop, from: self.config)
+        logger.info("Connected to broker at \(url)")
     }
 
-    private func gracefulCancellableDelay(timeout: Duration) async throws {
-        for await _ in AsyncTimerSequence(interval: timeout, clock: .continuous).cancelOnGracefulShutdown() {
-            break
+    public func reconfigure(with url: String, tls: TLSConfiguration = TLSConfiguration.makeClientConfiguration())
+        async throws
+    {
+        logger.debug("Received call to reconfigure connection from \(self.url) -> \(url)")
+
+        // Close existing connection
+        if isConnected {
+            logger.info("Closing existing connection to \(url)")
+            try await connection?.close()
+            try await channel?.close()
         }
+
+        // Update URL and connection
+        self.url = url
+        self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
+
+        // This is set to make monitorConnection() reconnect immediately
+        lastConnectionAttempt = nil
     }
 
     private func monitorConnection(reconnectionInterval: Duration) async throws {
-        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+        for await _ in AsyncTimerSequence(interval: PollingConnectionSleepInterval, clock: .continuous) {
             // Ignore if connected
             if isConnected {
-                try await Task.sleep(for: PollingConnectionSleepInterval)
                 continue
             }
 
-            // Connect or reconnect after interval
+            // Wait until reconnection interval if we had a previous attempt
+            if let lastConnectionAttempt {
+                if ContinuousClock().now - lastConnectionAttempt < reconnectionInterval {
+                    continue
+                }
+            }
+
+            // Attempt to connect, set last attempt on failure
             do {
                 try await self.connect()
-                continue
+                lastConnectionAttempt = nil
             } catch {
                 logger.error("Unable to connect to broker at \(self.url): \(error)")
-                try await gracefulCancellableDelay(timeout: reconnectionInterval)
+                lastConnectionAttempt = ContinuousClock().now
             }
         }
     }
@@ -129,7 +154,7 @@ public actor Connection {
                     if self.isConnected {
                         break
                     }
-                    try await self.gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
+                    try await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
                 }
             }
         } catch {
