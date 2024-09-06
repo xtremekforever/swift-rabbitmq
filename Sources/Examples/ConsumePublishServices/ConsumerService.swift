@@ -4,14 +4,14 @@ import RabbitMq
 import ServiceLifecycle
 
 struct ConsumerService: Service {
-    private let rabbitMqConnectable: Connectable
+    private let rabbitMqConnection: Connection
     private let logger: Logger
 
     init(
-        _ rabbitMqConnectable: Connectable,
+        _ rabbitMqConnection: Connection,
         _ logger: Logger = Logger(label: "\(ConsumerService.self)")
     ) {
-        self.rabbitMqConnectable = rabbitMqConnectable
+        self.rabbitMqConnection = rabbitMqConnection
         self.logger = logger
     }
 
@@ -30,10 +30,8 @@ struct ConsumerService: Service {
     }
 
     func run() async throws {
-        let connection = try await rabbitMqConnectable.waitGetConnection()
-
         let consumer = Consumer(
-            connection, "ConsumerServiceQueue", "ServiceExampleContract",
+            rabbitMqConnection, "ConsumerServiceQueue", "ServiceExampleContract",
             consumerOptions: .init(noAck: true)
         )
 

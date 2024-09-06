@@ -11,8 +11,8 @@ var logger = Logger(label: "ConsumePublishServices")
 logger.logLevel = .debug
 
 let rabbitMqService = try RabbitMqService("amqp://guest:guest@localhost/%2f", logger)
-let consumerService = ConsumerService(rabbitMqService, logger)
-let publisherService = PublisherService(rabbitMqService, logger)
+let consumerService = ConsumerService(rabbitMqService.connection, logger)
+let publisherService = PublisherService(rabbitMqService.connection, logger)
 let serviceGroup = ServiceGroup(
     configuration: .init(
         services: [

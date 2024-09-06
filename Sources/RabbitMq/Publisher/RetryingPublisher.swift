@@ -35,7 +35,6 @@ struct RetryingPublisher: Sendable {
                 }
 
                 // Wait for connection, timeout after retryInterval
-
                 await self.connection.waitForConnection(timeout: retryInterval)
 
                 firstAttempt = false

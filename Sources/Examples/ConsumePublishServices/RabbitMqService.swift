@@ -4,10 +4,10 @@ import RabbitMq
 import ServiceLifecycle
 
 // Service that creates RabbitMq connection & monitors it until shutdown
-struct RabbitMqService: Service, Connectable {
+struct RabbitMqService: Service {
     private let connectionUrl: String
     private let logger: Logger
-    private let connection: Connection
+    public let connection: BasicConnection
 
     init(
         _ connectionUrl: String,
@@ -18,7 +18,7 @@ struct RabbitMqService: Service, Connectable {
 
         var tls = TLSConfiguration.makeClientConfiguration()
         tls.certificateVerification = .none
-        connection = try Connection(connectionUrl, tls: tls, logger: logger)
+        connection = try BasicConnection(connectionUrl, tls: tls, logger: logger)
     }
 
     func getConnection() -> Connection? {

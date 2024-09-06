@@ -8,15 +8,21 @@ import ServiceLifecycle
 
 let PollingConnectionSleepInterval = Duration.milliseconds(100)
 
-public actor Connection {
+public protocol Connection: Sendable {
+    var logger: Logger { get }
+
+    func getChannel() async throws -> AMQPChannel?
+    func waitForConnection(timeout: Duration) async
+}
+
+public actor BasicConnection: Connection {
     private(set) public var url: String
     private var config: AMQPConnectionConfiguration
     private let eventLoop: EventLoop
-    let logger: Logger  // shared to users of Connection
+    public let logger: Logger  // shared to users of Connection
 
     private var channel: AMQPChannel?
     private var connection: AMQPConnection?
-    private let newConsumers: AsyncChannel<RetryingConsumer>
 
     private var connecting = false
     private var lastConnectionAttempt: ContinuousClock.Instant? = nil
@@ -38,13 +44,6 @@ public actor Connection {
         self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
         self.eventLoop = eventLoop
         self.logger = logger
-
-        self.newConsumers = AsyncChannel<RetryingConsumer>()
-    }
-
-    // Internal use only, for retrying consumers functionality
-    func addRetryingConsumer(consumer: RetryingConsumer) async {
-        await newConsumers.send(consumer)
     }
 
     // Method to use to connect without monitoring
@@ -84,7 +83,9 @@ public actor Connection {
     }
 
     private func monitorConnection(reconnectionInterval: Duration) async throws {
-        for await _ in AsyncTimerSequence(interval: PollingConnectionSleepInterval, clock: .continuous) {
+        for await _ in AsyncTimerSequence(interval: PollingConnectionSleepInterval, clock: .continuous)
+            .cancelOnGracefulShutdown()
+        {
             // Ignore if connected
             if isConnected {
                 continue
@@ -115,20 +116,10 @@ public actor Connection {
                     // Monitor connection task
                     try await self.monitorConnection(reconnectionInterval: interval)
 
-                    // Stop receiving new consumers
-                    self.newConsumers.finish()
-
                     // Close connection at the end
                     try? await self.close()
                 }
             }
-
-            for try await consumer in newConsumers {
-                group.addTask { try await consumer.run() }
-            }
-
-            // Cancel all tasks on exit
-            group.cancelAll()
         }
     }
 
@@ -163,9 +154,6 @@ public actor Connection {
     }
 
     public func close() async throws {
-        // Stop accepting new consumers
-        newConsumers.finish()
-
         if !isConnected {
             return
         }
