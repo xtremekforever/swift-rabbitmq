@@ -1,4 +1,4 @@
-@preconcurrency import AMQPClient
+import AMQPClient
 import AsyncAlgorithms
 import Logging
 
