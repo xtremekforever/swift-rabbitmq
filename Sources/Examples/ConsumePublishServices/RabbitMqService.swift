@@ -7,7 +7,7 @@ import ServiceLifecycle
 struct RabbitMqService: Service {
     private let connectionUrl: String
     private let logger: Logger
-    public let connection: BasicConnection
+    public let connection: RetryingConnection
 
     init(
         _ connectionUrl: String,
@@ -18,7 +18,9 @@ struct RabbitMqService: Service {
 
         var tls = TLSConfiguration.makeClientConfiguration()
         tls.certificateVerification = .none
-        connection = try BasicConnection(connectionUrl, tls: tls, logger: logger)
+        connection = try RetryingConnection(
+            connectionUrl, tls: tls, reconnectionInterval: Duration.seconds(15), logger: logger
+        )
     }
 
     func getConnection() -> Connection? {
@@ -29,7 +31,7 @@ struct RabbitMqService: Service {
         logger.info("Starting up RabbitMqService...")
 
         // Connection monitoring & recovery pattern
-        try await connection.run(reconnectionInterval: Duration.seconds(15))
+        try await connection.run()
 
         logger.info("Shutting down RabbitMqService...")
     }
