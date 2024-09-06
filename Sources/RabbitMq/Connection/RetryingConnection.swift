@@ -56,7 +56,7 @@ public actor RetryingConnection: Connection {
                 try await basicConnection.connect()
                 lastConnectionAttempt = nil
             } catch {
-                let url = await basicConnection.url
+                let url = await basicConnection.configuredUrl()
                 logger.error("Unable to connect to broker at \(url): \(error)")
                 lastConnectionAttempt = ContinuousClock().now
             }
@@ -64,6 +64,10 @@ public actor RetryingConnection: Connection {
 
         // Close connection at the end
         try? await self.basicConnection.close()
+    }
+
+    public func configuredUrl() async -> String {
+        return await basicConnection.configuredUrl()
     }
 
     public func getChannel() async throws -> AMQPChannel? {

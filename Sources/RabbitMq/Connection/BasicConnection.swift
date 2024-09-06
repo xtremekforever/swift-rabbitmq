@@ -9,7 +9,7 @@ import ServiceLifecycle
 let PollingConnectionSleepInterval = Duration.milliseconds(100)
 
 public actor BasicConnection: Connection {
-    private(set) public var url: String
+    private var url: String
     private var config: AMQPConnectionConfiguration
     private let eventLoop: EventLoop
     public let logger: Logger  // shared to users of Connection
@@ -76,6 +76,10 @@ public actor BasicConnection: Connection {
         // Update URL and connection
         self.url = url
         self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
+    }
+
+    public func configuredUrl() async -> String {
+        return url
     }
 
     public func getChannel() async throws -> AMQPChannel? {
