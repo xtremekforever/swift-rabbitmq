@@ -11,6 +11,14 @@ public actor RetryingConnection: Connection {
 
     private var lastConnectionAttempt: ContinuousClock.Instant? = nil
 
+    public var configuredUrl: String {
+        get async { await basicConnection.configuredUrl }
+    }
+
+    public var isConnected: Bool {
+        get async { await basicConnection.isConnected }
+    }
+
     public init(
         _ url: String = "",
         tls: TLSConfiguration = TLSConfiguration.makeClientConfiguration(),
@@ -56,7 +64,7 @@ public actor RetryingConnection: Connection {
                 try await basicConnection.connect()
                 lastConnectionAttempt = nil
             } catch {
-                let url = await basicConnection.configuredUrl()
+                let url = await configuredUrl
                 logger.error("Unable to connect to broker at \(url): \(error)")
                 lastConnectionAttempt = ContinuousClock().now
             }
@@ -66,15 +74,7 @@ public actor RetryingConnection: Connection {
         try? await self.basicConnection.close()
     }
 
-    public func configuredUrl() async -> String {
-        return await basicConnection.configuredUrl()
-    }
-
     public func getChannel() async throws -> AMQPChannel? {
         return try await basicConnection.getChannel()
-    }
-
-    public func waitForConnection(timeout: Duration) async {
-        await basicConnection.waitForConnection(timeout: timeout)
     }
 }

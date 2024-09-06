@@ -19,6 +19,10 @@ public actor BasicConnection: Connection {
 
     private var connecting = false
 
+    public var configuredUrl: String {
+        return url
+    }
+
     public var isConnected: Bool {
         if let conn = self.connection {
             return conn.isConnected
@@ -78,10 +82,6 @@ public actor BasicConnection: Connection {
         self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
     }
 
-    public func configuredUrl() async -> String {
-        return url
-    }
-
     public func getChannel() async throws -> AMQPChannel? {
         // Not connected
         guard isConnected else {
@@ -95,21 +95,6 @@ public actor BasicConnection: Connection {
             return self.channel!
         }
         return channel
-    }
-
-    public func waitForConnection(timeout: Duration) async {
-        do {
-            try await withTimeout(duration: timeout) {
-                while !Task.isCancelled && !Task.isShuttingDownGracefully {
-                    if self.isConnected {
-                        break
-                    }
-                    try await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
-                }
-            }
-        } catch {
-            // Ignore timeout and cancellation errors
-        }
     }
 
     public func close() async throws {
