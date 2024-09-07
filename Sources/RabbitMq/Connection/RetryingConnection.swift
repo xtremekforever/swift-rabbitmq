@@ -45,10 +45,10 @@ public actor RetryingConnection: Connection {
 
     public func run() async throws {
         // Monitor connection, reconnect if needed
-        let timerSequence = AsyncTimerSequence(interval: PollingConnectionSleepInterval, clock: .continuous)
-        for await _ in timerSequence.cancelOnGracefulShutdown() {
+        while !Task.isCancelled && !Task.isShuttingDownGracefully {
             // Ignore if connected
             if await basicConnection.isConnected {
+                await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
                 continue
             }
 
@@ -71,7 +71,7 @@ public actor RetryingConnection: Connection {
         }
 
         // Close connection at the end
-        try? await self.basicConnection.close()
+        try await self.basicConnection.close()
     }
 
     public func getChannel() async throws -> AMQPChannel? {
