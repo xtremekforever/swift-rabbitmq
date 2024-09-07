@@ -9,8 +9,6 @@ public actor RetryingConnection: Connection {
     private var reconnectionInterval: Duration
     public let logger: Logger  // shared to users of Connection
 
-    private var lastConnectionAttempt: ContinuousClock.Instant? = nil
-
     public var configuredUrl: String {
         get async { await basicConnection.configuredUrl }
     }
@@ -21,7 +19,7 @@ public actor RetryingConnection: Connection {
 
     public init(
         _ url: String = "",
-        tls: TLSConfiguration = TLSConfiguration.makeClientConfiguration(),
+        tls: TLSConfiguration? = nil,
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         reconnectionInterval: Duration = .seconds(30),
         logger: Logger = Logger(label: "\(RetryingConnection.self)")
@@ -47,6 +45,7 @@ public actor RetryingConnection: Connection {
 
     public func run() async throws {
         // Monitor connection, reconnect if needed
+        var lastConnectionAttempt: ContinuousClock.Instant? = nil
         while !Task.isCancelled && !Task.isShuttingDownGracefully {
             // Ignore if connected
             if await basicConnection.isConnected {
@@ -73,7 +72,7 @@ public actor RetryingConnection: Connection {
         }
 
         // Close connection at the end
-        try await self.basicConnection.close()
+        await self.basicConnection.close()
     }
 
     public func getChannel() async throws -> AMQPChannel? {
