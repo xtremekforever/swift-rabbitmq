@@ -1,6 +1,8 @@
 import AMQPClient
 import Logging
 
+let PollingConnectionSleepInterval = Duration.milliseconds(100)
+
 public protocol Connection: Sendable {
     var logger: Logger { get }
 

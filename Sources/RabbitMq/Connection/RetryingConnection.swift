@@ -33,13 +33,15 @@ public actor RetryingConnection: Connection {
 
     public func reconfigure(
         with url: String, tls: TLSConfiguration? = nil, reconnectionInterval: Duration? = nil
-    ) async throws {
-        try await basicConnection.reconfigure(with: url, tls: tls)
+    ) async {
+        await basicConnection.reconfigure(with: url, tls: tls)
 
         // Update reconnection interval, this will apply on the next reconnection
         if let reconnectionInterval {
-            logger.debug("Changing reconnection interval from \(self.reconnectionInterval) -> \(reconnectionInterval)")
-            self.reconnectionInterval = reconnectionInterval
+            if reconnectionInterval != self.reconnectionInterval {
+                logger.debug("Changing reconnection interval from \(self.reconnectionInterval) -> \(reconnectionInterval)")
+                self.reconnectionInterval = reconnectionInterval
+            }
         }
     }
 

@@ -53,4 +53,4 @@ try await withThrowingTaskGroup(of: Void.self) { group in
 print("Done!")
 
 // Cleanup
-try await connection.close()
+await connection.close()

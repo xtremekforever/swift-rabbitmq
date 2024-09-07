@@ -6,8 +6,6 @@ import NIO
 import NIOSSL
 import ServiceLifecycle
 
-let PollingConnectionSleepInterval = Duration.milliseconds(100)
-
 public actor BasicConnection: Connection {
     private var url: String
     private var tls: TLSConfiguration?
@@ -61,13 +59,13 @@ public actor BasicConnection: Connection {
         logger.info("Connected to broker at \(url)")
     }
 
-    public func reconfigure(with url: String, tls: TLSConfiguration? = nil) async throws {
+    public func reconfigure(with url: String, tls: TLSConfiguration? = nil) async {
         // If the URL changes
         if url != self.url {
             logger.debug("Received call to reconfigure connection from \(self.url) -> \(url)")
 
             // Close any existing connection
-            try await close()
+            await close()
         }
 
         // Update configuration
@@ -90,13 +88,13 @@ public actor BasicConnection: Connection {
         return channel
     }
 
-    public func close() async throws {
+    public func close() async {
         if !isConnected {
             return
         }
 
         logger.info("Closing connection to \(url)")
-        try await connection?.close()
-        try await channel?.close()
+        try? await connection?.close()
+        try? await channel?.close()
     }
 }
