@@ -10,7 +10,7 @@ let PollingConnectionSleepInterval = Duration.milliseconds(100)
 
 public actor BasicConnection: Connection {
     private var url: String
-    private var config: AMQPConnectionConfiguration
+    private var tls: TLSConfiguration?
     private let eventLoop: EventLoop
     public let logger: Logger  // shared to users of Connection
 
@@ -32,12 +32,12 @@ public actor BasicConnection: Connection {
 
     public init(
         _ url: String = "",
-        tls: TLSConfiguration = TLSConfiguration.makeClientConfiguration(),
+        tls: TLSConfiguration? = nil,
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         logger: Logger = Logger(label: "\(BasicConnection.self)")
     ) throws {
         self.url = url
-        self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
+        self.tls = tls
         self.eventLoop = eventLoop
         self.logger = logger
     }
@@ -54,32 +54,25 @@ public actor BasicConnection: Connection {
 
         // Actually connect
         logger.info("Connecting to broker at \(url)")
-        self.connection = try await AMQPConnection.connect(use: self.eventLoop, from: self.config)
+        connection = try await AMQPConnection.connect(
+            use: eventLoop,
+            from: AMQPConnectionConfiguration(url: url, tls: tls)
+        )
         logger.info("Connected to broker at \(url)")
     }
 
     public func reconfigure(with url: String, tls: TLSConfiguration? = nil) async throws {
-        // If there are no changes
-        if url == self.url && tls == nil {
-            return
+        // If the URL changes
+        if url != self.url {
+            logger.debug("Received call to reconfigure connection from \(self.url) -> \(url)")
+
+            // Close any existing connection
+            try await close()
         }
 
-        // Log about reconfiguration
-        logger.debug("Received call to reconfigure connection from \(self.url) -> \(url)")
-        if let tls {
-            logger.debug("Also applying new TLS configuration: \(tls)")
-        }
-
-        // Close existing connection
-        if isConnected {
-            logger.info("Closing existing connection to \(url)")
-            try await connection?.close()
-            try await channel?.close()
-        }
-
-        // Update URL and connection
+        // Update configuration
         self.url = url
-        self.config = try AMQPConnectionConfiguration.init(url: url, tls: tls)
+        self.tls = tls
     }
 
     public func getChannel() async throws -> AMQPChannel? {
