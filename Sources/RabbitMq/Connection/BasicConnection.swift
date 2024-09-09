@@ -1,10 +1,10 @@
 import AMQPClient
-import AsyncAlgorithms
 import Foundation
 import Logging
 import NIO
 import NIOSSL
 import ServiceLifecycle
+import Semaphore
 
 public actor BasicConnection: Connection {
     private var url: String
@@ -16,6 +16,7 @@ public actor BasicConnection: Connection {
     private var connection: AMQPConnection?
 
     private var connecting = false
+    private let channelSemaphore = AsyncSemaphore(value: 1)
 
     public var configuredUrl: String {
         return url
@@ -78,6 +79,10 @@ public actor BasicConnection: Connection {
         guard isConnected else {
             return nil
         }
+
+        // Ensure that only one task can open the channel at a time
+        await channelSemaphore.wait()
+        defer { channelSemaphore.signal() }
 
         // We're connected, let's reuse the channel
         guard let channel = self.channel, channel.isOpen else {
