@@ -3,7 +3,7 @@ import NIO
 import RabbitMq
 
 // Create connection and connect to the broker
-let connection = try RabbitMq.Connection("amqp://guest:guest@localhost/%2F")
+let connection = try RabbitMq.BasicConnection("amqp://guest:guest@localhost/%2F")
 try await connection.connect()
 
 // Use structured task group to run examples
@@ -53,4 +53,4 @@ try await withThrowingTaskGroup(of: Void.self) { group in
 print("Done!")
 
 // Cleanup
-try await connection.close()
+await connection.close()

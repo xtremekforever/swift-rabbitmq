@@ -4,22 +4,20 @@ import RabbitMq
 import ServiceLifecycle
 
 struct PublisherService: Service {
-    private let rabbitMqConnectable: Connectable
+    private let rabbitMqConnection: Connection
     private let logger: Logger
 
     init(
-        _ rabbitMqConnectable: Connectable,
+        _ rabbitMqConnection: Connection,
         _ logger: Logger = Logger(label: "\(PublisherService.self)")
     ) {
-        self.rabbitMqConnectable = rabbitMqConnectable
+        self.rabbitMqConnection = rabbitMqConnection
         self.logger = logger
     }
 
     func run() async throws {
-        let connection = try await rabbitMqConnectable.waitGetConnection()
-
         let publisher = Publisher(
-            connection, "ServiceExampleContract"
+            rabbitMqConnection, "ServiceExampleContract"
         )
 
         while !Task.isShuttingDownGracefully {

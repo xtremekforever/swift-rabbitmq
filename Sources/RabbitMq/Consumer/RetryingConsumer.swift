@@ -1,4 +1,4 @@
-@preconcurrency import AMQPClient
+import AMQPClient
 import AsyncAlgorithms
 import Logging
 
@@ -81,8 +81,11 @@ struct RetryingConsumer: Sendable {
     }
 
     func consume() async throws -> ConsumerChannel<String> {
-        // Add consumer to
-        await connection.addRetryingConsumer(consumer: self)
+        // We spin off an unstructured task here for the consumer
+        // It will be invariably linked to the ConsumerChannel instance that is created
+        Task {
+            try await run()
+        }
         return ConsumerChannel(consumeChannel: consumeChannel, cancellationChannel: cancellationChannel)
     }
 }
