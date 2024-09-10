@@ -37,7 +37,8 @@ public actor RetryingConnection: Connection {
         // Update reconnection interval, this will apply on the next reconnection
         if let reconnectionInterval {
             if reconnectionInterval != self.reconnectionInterval {
-                logger.debug("Changing reconnection interval from \(self.reconnectionInterval) -> \(reconnectionInterval)")
+                logger.debug(
+                    "Changing reconnection interval from \(self.reconnectionInterval) -> \(reconnectionInterval)")
                 self.reconnectionInterval = reconnectionInterval
             }
         }
@@ -56,6 +57,7 @@ public actor RetryingConnection: Connection {
             // Wait until reconnection interval if we had a previous attempt
             if let lastConnectionAttempt {
                 if ContinuousClock().now - lastConnectionAttempt < reconnectionInterval {
+                    await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
                     continue
                 }
             }
