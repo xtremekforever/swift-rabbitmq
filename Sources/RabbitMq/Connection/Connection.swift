@@ -1,13 +1,13 @@
 import AMQPClient
 import Logging
 
-let PollingConnectionSleepInterval = Duration.milliseconds(100)
+let PollingConnectionSleepInterval = Duration.milliseconds(250)
 
 public protocol Connection: Sendable {
     var logger: Logger { get }
 
     var configuredUrl: String { get async }
-    var isConnected: Bool { get async}
+    var isConnected: Bool { get async }
 
     func waitForConnection(timeout: Duration) async
     func getChannel() async throws -> AMQPChannel?
@@ -21,7 +21,7 @@ extension Connection {
                     if await isConnected {
                         break
                     }
-                    await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
+                    try await Task.sleep(for: PollingConnectionSleepInterval)
                 }
             }
         } catch {

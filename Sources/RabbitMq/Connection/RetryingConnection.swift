@@ -50,14 +50,14 @@ public actor RetryingConnection: Connection {
         while !Task.isCancelled && !Task.isShuttingDownGracefully {
             // Ignore if connected
             if await basicConnection.isConnected {
-                await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
+                try await Task.sleep(for: PollingConnectionSleepInterval)
                 continue
             }
 
             // Wait until reconnection interval if we had a previous attempt
             if let lastConnectionAttempt {
                 if ContinuousClock().now - lastConnectionAttempt < reconnectionInterval {
-                    await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
+                    try await Task.sleep(for: PollingConnectionSleepInterval)
                     continue
                 }
             }
