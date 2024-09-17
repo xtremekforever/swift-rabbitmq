@@ -45,19 +45,18 @@ public actor RetryingConnection: Connection {
     }
 
     public func run() async throws {
-        // Monitor connection, reconnect if needed
         var lastConnectionAttempt: ContinuousClock.Instant? = nil
-        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+
+        // Monitor connection, reconnect if needed
+        for await _ in pollingSequence(interval: PollingConnectionSleepInterval).cancelOnGracefulShutdown() {
             // Ignore if connected
             if await basicConnection.isConnected {
-                try await Task.sleep(for: PollingConnectionSleepInterval)
                 continue
             }
 
             // Wait until reconnection interval if we had a previous attempt
             if let lastConnectionAttempt {
                 if ContinuousClock().now - lastConnectionAttempt < reconnectionInterval {
-                    try await Task.sleep(for: PollingConnectionSleepInterval)
                     continue
                 }
             }
