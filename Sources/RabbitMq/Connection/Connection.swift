@@ -19,15 +19,16 @@ public protocol Connection: Sendable {
 extension Connection {
     public func waitForConnection(timeout: Duration) async {
         let start = ContinuousClock().now
-        for await _ in pollingSequence(interval: connectionPollingInterval).cancelOnGracefulShutdown() {
+        while !Task.isCancelledOrShuttingDown {
             if await isConnected {
                 break
             }
 
-            // Timeout
             if ContinuousClock().now - start >= timeout {
                 break
             }
+
+            await gracefulCancellableDelay(connectionPollingInterval)
         }
     }
 }

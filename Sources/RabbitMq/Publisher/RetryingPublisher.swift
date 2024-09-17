@@ -31,7 +31,7 @@ struct RetryingPublisher: Sendable {
                 if !firstAttempt {
                     let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
                     logger.error(
-                        "Connection closed while publishing from exchange \(configuration.exchangeName): \(error)")
+                        "Connection closed while publishing to exchange \(configuration.exchangeName): \(error)")
                 }
 
                 // Wait for connection, timeout after retryInterval

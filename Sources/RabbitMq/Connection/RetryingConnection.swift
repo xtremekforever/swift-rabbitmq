@@ -51,15 +51,17 @@ public actor RetryingConnection: Connection {
         var lastConnectionAttempt: ContinuousClock.Instant? = nil
 
         // Monitor connection, reconnect if needed
-        for await _ in pollingSequence(interval: connectionPollingInterval).cancelOnGracefulShutdown() {
+        while !Task.isCancelledOrShuttingDown {
             // Ignore if connected
             if await basicConnection.isConnected {
+                await gracefulCancellableDelay(connectionPollingInterval)
                 continue
             }
 
             // Wait until reconnection interval if we had a previous attempt
             if let lastConnectionAttempt {
                 if ContinuousClock().now - lastConnectionAttempt < reconnectionInterval {
+                    await gracefulCancellableDelay(connectionPollingInterval)
                     continue
                 }
             }
