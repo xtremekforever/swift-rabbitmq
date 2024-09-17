@@ -10,14 +10,10 @@ public actor BasicConnection: Connection {
     private var url: String
     private var tls: TLSConfiguration?
     private let eventLoop: EventLoop
+
+    // Protocol conformances
     public let logger: Logger  // shared to users of Connection
-
-    private var channel: AMQPChannel?
-    private var connection: AMQPConnection?
-
-    private var connecting = false
-    private let channelSemaphore = AsyncSemaphore(value: 1)
-
+    public let connectionPollingInterval: Duration
     public var configuredUrl: String {
         return url
     }
@@ -29,16 +25,25 @@ public actor BasicConnection: Connection {
         return false
     }
 
+    private var channel: AMQPChannel?
+    private var connection: AMQPConnection?
+
+    private var connecting = false
+    private let channelSemaphore = AsyncSemaphore(value: 1)
+
+
     public init(
         _ url: String = "",
         tls: TLSConfiguration? = nil,
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
-        logger: Logger = Logger(label: "\(BasicConnection.self)")
+        logger: Logger = Logger(label: "\(BasicConnection.self)"),
+        connectionPollingInterval: Duration = DefaultConnectionPollingInterval
     ) throws {
         self.url = url
         self.tls = tls
         self.eventLoop = eventLoop
         self.logger = logger
+        self.connectionPollingInterval = connectionPollingInterval
     }
 
     // Method to use to connect without monitoring
