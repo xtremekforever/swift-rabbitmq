@@ -1,13 +1,16 @@
 import AMQPClient
 import Logging
 
-let PollingConnectionSleepInterval = Duration.milliseconds(100)
+// This is the default for all connections, but can be customized per-connection
+// to increase responsiveness or reduce CPU usage.
+public let DefaultConnectionPollingInterval = Duration.milliseconds(250)
 
 public protocol Connection: Sendable {
     var logger: Logger { get }
+    var connectionPollingInterval: Duration { get }
 
     var configuredUrl: String { get async }
-    var isConnected: Bool { get async}
+    var isConnected: Bool { get async }
 
     func waitForConnection(timeout: Duration) async
     func getChannel() async throws -> AMQPChannel?
@@ -15,17 +18,17 @@ public protocol Connection: Sendable {
 
 extension Connection {
     public func waitForConnection(timeout: Duration) async {
-        do {
-            try await withTimeout(duration: timeout) {
-                while !Task.isCancelled && !Task.isShuttingDownGracefully {
-                    if await isConnected {
-                        break
-                    }
-                    await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
-                }
+        let start = ContinuousClock().now
+        while !Task.isCancelledOrShuttingDown {
+            if await isConnected {
+                break
             }
-        } catch {
-            // Ignore timeout and cancellation errors
+
+            if ContinuousClock().now - start >= timeout {
+                break
+            }
+
+            await gracefulCancellableDelay(connectionPollingInterval)
         }
     }
 }

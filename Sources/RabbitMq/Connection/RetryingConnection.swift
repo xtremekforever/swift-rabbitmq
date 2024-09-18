@@ -7,12 +7,13 @@ import NIOSSL
 public actor RetryingConnection: Connection {
     private let basicConnection: BasicConnection
     private var reconnectionInterval: Duration
-    public let logger: Logger  // shared to users of Connection
 
+    // Protocol conformances
+    public let logger: Logger  // shared to users of Connection
+    public let connectionPollingInterval: Duration
     public var configuredUrl: String {
         get async { await basicConnection.configuredUrl }
     }
-
     public var isConnected: Bool {
         get async { await basicConnection.isConnected }
     }
@@ -22,11 +23,15 @@ public actor RetryingConnection: Connection {
         tls: TLSConfiguration? = nil,
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         reconnectionInterval: Duration = .seconds(30),
-        logger: Logger = Logger(label: "\(RetryingConnection.self)")
+        logger: Logger = Logger(label: "\(RetryingConnection.self)"),
+        connectionPollingInterval: Duration = DefaultConnectionPollingInterval
     ) throws {
+        assert(connectionPollingInterval > .seconds(0))
+
         self.basicConnection = try BasicConnection(url, tls: tls, eventLoop: eventLoop, logger: logger)
         self.reconnectionInterval = reconnectionInterval
         self.logger = logger
+        self.connectionPollingInterval = connectionPollingInterval
     }
 
     public func reconfigure(
@@ -45,19 +50,20 @@ public actor RetryingConnection: Connection {
     }
 
     public func run() async throws {
-        // Monitor connection, reconnect if needed
         var lastConnectionAttempt: ContinuousClock.Instant? = nil
-        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+
+        // Monitor connection, reconnect if needed
+        while !Task.isCancelledOrShuttingDown {
             // Ignore if connected
             if await basicConnection.isConnected {
-                await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
+                await gracefulCancellableDelay(connectionPollingInterval)
                 continue
             }
 
             // Wait until reconnection interval if we had a previous attempt
             if let lastConnectionAttempt {
                 if ContinuousClock().now - lastConnectionAttempt < reconnectionInterval {
-                    await gracefulCancellableDelay(timeout: PollingConnectionSleepInterval)
+                    await gracefulCancellableDelay(connectionPollingInterval)
                     continue
                 }
             }
