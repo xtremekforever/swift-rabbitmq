@@ -26,6 +26,8 @@ public actor RetryingConnection: Connection {
         logger: Logger = Logger(label: "\(RetryingConnection.self)"),
         connectionPollingInterval: Duration = DefaultConnectionPollingInterval
     ) throws {
+        assert(connectionPollingInterval > .seconds(0))
+
         self.basicConnection = try BasicConnection(url, tls: tls, eventLoop: eventLoop, logger: logger)
         self.reconnectionInterval = reconnectionInterval
         self.logger = logger

@@ -3,8 +3,8 @@ import Foundation
 import Logging
 import NIO
 import NIOSSL
-import ServiceLifecycle
 import Semaphore
+import ServiceLifecycle
 
 public actor BasicConnection: Connection {
     private var url: String
@@ -31,7 +31,6 @@ public actor BasicConnection: Connection {
     private var connecting = false
     private let channelSemaphore = AsyncSemaphore(value: 1)
 
-
     public init(
         _ url: String = "",
         tls: TLSConfiguration? = nil,
@@ -39,6 +38,8 @@ public actor BasicConnection: Connection {
         logger: Logger = Logger(label: "\(BasicConnection.self)"),
         connectionPollingInterval: Duration = DefaultConnectionPollingInterval
     ) throws {
+        assert(connectionPollingInterval > .seconds(0))
+
         self.url = url
         self.tls = tls
         self.eventLoop = eventLoop
