@@ -6,6 +6,7 @@ import NIOSSL
 import Semaphore
 import ServiceLifecycle
 
+/// Basic connection RabbitMQ. Does not provide any connection recovery.
 public actor BasicConnection: Connection {
     private var url: String
     private var tls: TLSConfiguration?
@@ -31,13 +32,21 @@ public actor BasicConnection: Connection {
     private var connecting = false
     private let channelSemaphore = AsyncSemaphore(value: 1)
 
+    /// Create a `BasicConnection` instance.
+    ///
+    /// - Parameters:
+    ///   - url: URL to use to connect to RabbitMQ. Example: `amqp://localhost/%2f`
+    ///   - tls: Optional `TLSConfiguration` to use for connection.
+    ///   - eventLoop: Event loop to use for internal futures API of `rabbitmq-nio`.
+    ///   - logger: Logger to use for this connection and all consumers/publishers associated to this connection.
+    ///   - connectionPollingInterval: Interval to use to poll for connection. *Must* be greater than 0 seconds.
     public init(
-        _ url: String = "",
+        _ url: String,
         tls: TLSConfiguration? = nil,
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
-        logger: Logger = Logger(label: "\(BasicConnection.self)"),
+        logger: Logger = Logger(label: String(describing: BasicConnection.self)),
         connectionPollingInterval: Duration = DefaultConnectionPollingInterval
-    ) throws {
+    ) {
         assert(connectionPollingInterval > .seconds(0))
 
         self.url = url
@@ -47,7 +56,13 @@ public actor BasicConnection: Connection {
         self.connectionPollingInterval = connectionPollingInterval
     }
 
-    // Method to use to connect without monitoring
+    /// Perform a connection to the RabbitMQ broker.
+    ///
+    /// This method does not provide any connection recovery. It is protected from
+    /// actor reentrancy to ensure that more than a single connection is not started
+    /// by different calling tasks.
+    ///
+    /// - Throws: `AMQPConnectionError` if unable to connect.
     public func connect() async throws {
         if isConnected || connecting {
             return
@@ -66,6 +81,14 @@ public actor BasicConnection: Connection {
         logger.info("Connected to broker at \(url)")
     }
 
+    /// Reconfigure this connection to RabbitMQ.
+    ///
+    /// If the URL changes from the previously configured URL, any open connections will
+    /// be closed. It will need to be reopened manually by calling `connect()` again.
+    ///
+    /// - Parameters:
+    ///   - url: URL to use to connect to RabbitMQ. Example: `amqp://localhost/%2f`
+    ///   - tls: Optional `TLSConfiguration` to use for connection.
     public func reconfigure(with url: String, tls: TLSConfiguration? = nil) async {
         // If the URL changes
         if url != self.url {
@@ -80,6 +103,14 @@ public actor BasicConnection: Connection {
         self.tls = tls
     }
 
+    /// Open or get a channel instance for the current connection.
+    ///
+    /// If the channel already exists it will be returned. If not, a new channel will be
+    /// opened. This method is protected from actor reentrancy to ensure that multiple
+    /// channels are not created by multiple concurrent tasks.
+    ///
+    /// - Throws: `AMQPConnectionError` if unable to connect.
+    /// - Returns: `AMQPChannel` if the channel could be opened or already exists. `nil` otherwise.
     public func getChannel() async throws -> AMQPChannel? {
         // Not connected
         guard isConnected else {
@@ -99,6 +130,10 @@ public actor BasicConnection: Connection {
         return channel
     }
 
+    /// Close connection to RabbitMQ.
+    ///
+    /// This method does nothing if not connected to RabbitMQ. It will also close the
+    /// channel if it is open.
     public func close() async {
         if !isConnected {
             return

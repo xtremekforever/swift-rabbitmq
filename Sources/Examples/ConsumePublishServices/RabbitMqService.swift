@@ -12,13 +12,13 @@ struct RabbitMqService: Service {
     init(
         _ connectionUrl: String,
         _ logger: Logger = Logger(label: String(describing: RabbitMqService.self))
-    ) throws {
+    ) {
         self.connectionUrl = connectionUrl
         self.logger = logger
 
         var tls = TLSConfiguration.makeClientConfiguration()
         tls.certificateVerification = .none
-        connection = try RetryingConnection(
+        connection = RetryingConnection(
             connectionUrl, tls: tls, reconnectionInterval: .seconds(15), logger: logger
         )
     }
@@ -31,7 +31,7 @@ struct RabbitMqService: Service {
         logger.info("Starting up RabbitMqService...")
 
         // Connection monitoring & recovery pattern
-        try await connection.run()
+        await connection.run()
 
         logger.info("Shutting down RabbitMqService...")
     }

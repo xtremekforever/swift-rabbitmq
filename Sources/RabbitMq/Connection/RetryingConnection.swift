@@ -3,8 +3,10 @@ import AsyncAlgorithms
 import Logging
 import NIO
 import NIOSSL
+import ServiceLifecycle
 
-public actor RetryingConnection: Connection {
+/// Retrying connection to RabbitMQ. Provides full connection recovery patterns.
+public actor RetryingConnection: Connection, Service {
     private let basicConnection: BasicConnection
     private var reconnectionInterval: Duration
 
@@ -18,22 +20,40 @@ public actor RetryingConnection: Connection {
         get async { await basicConnection.isConnected }
     }
 
+    /// Create a `RetryingConnection` instance.
+    ///
+    /// - Parameters:
+    ///   - url: URL to use to connect to RabbitMQ. Example: `amqp://localhost/%2f`
+    ///   - tls: Optional `TLSConfiguration` to use for connection.
+    ///   - eventLoop: Event loop to use for internal futures API of `rabbitmq-nio`.
+    ///   - reconnectionInterval: Interval to use to reconnect to broker or connection error or lost connection.
+    ///   - logger: Logger to use for this connection and all consumers/publishers associated to this connection.
+    ///   - connectionPollingInterval: Interval to use to poll for connection. *Must* be greater than 0 seconds.
     public init(
-        _ url: String = "",
+        _ url: String,
         tls: TLSConfiguration? = nil,
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         reconnectionInterval: Duration = .seconds(30),
         logger: Logger = Logger(label: "\(RetryingConnection.self)"),
         connectionPollingInterval: Duration = DefaultConnectionPollingInterval
-    ) throws {
+    ) {
         assert(connectionPollingInterval > .seconds(0))
 
-        self.basicConnection = try BasicConnection(url, tls: tls, eventLoop: eventLoop, logger: logger)
+        self.basicConnection = BasicConnection(url, tls: tls, eventLoop: eventLoop, logger: logger)
         self.reconnectionInterval = reconnectionInterval
         self.logger = logger
         self.connectionPollingInterval = connectionPollingInterval
     }
 
+    /// Reconfigure this connection to RabbitMQ.
+    ///
+    /// If the URL changes from the previously configured URL, any open connections will
+    /// be closed. If the `reconnectionInterval` changes, the new interval will apply immediately.
+    ///
+    /// - Parameters:
+    ///   - url: URL to use to connect to RabbitMQ. Example: `amqp://localhost/%2f`
+    ///   - tls: Optional `TLSConfiguration` to use for connection.
+    ///   - reconnectionInterval: Interval to use to reconnect to broker or connection error or lost connection.
     public func reconfigure(
         with url: String, tls: TLSConfiguration? = nil, reconnectionInterval: Duration? = nil
     ) async {
@@ -49,7 +69,16 @@ public actor RetryingConnection: Connection {
         }
     }
 
-    public func run() async throws {
+    /// Method to connect to RabbitMQ and provide connection recovery and monitoring.
+    ///
+    /// Uses the configured `reconnectionInterval` to restore connection to the broker
+    /// after failing to connect or losing connection. The connection will be monitored
+    /// using the `connectionPollingInterval`.
+    ///
+    /// This task supports graceful shutdown for easy integration into for applications
+    /// that use `ServiceLifecycle`.
+    ///
+    public func run() async {
         var lastConnectionAttempt: ContinuousClock.Instant? = nil
 
         // Monitor connection, reconnect if needed
@@ -83,6 +112,14 @@ public actor RetryingConnection: Connection {
         await self.basicConnection.close()
     }
 
+    /// Open or get a channel instance for the current connection.
+    ///
+    /// If the channel already exists it will be returned. If not, a new channel will be
+    /// opened. This method is protected from actor reentrancy to ensure that multiple
+    /// channels are not created by multiple concurrent tasks.
+    ///
+    /// - Throws: `AMQPConnectionError` if unable to connect.
+    /// - Returns: `AMQPChannel` if the channel could be opened or already exists. `nil` otherwise.
     public func getChannel() async throws -> AMQPChannel? {
         return try await basicConnection.getChannel()
     }
