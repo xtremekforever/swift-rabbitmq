@@ -18,12 +18,10 @@ struct RetryingPublisher: Sendable {
         self.retryInterval = retryInterval
     }
 
-    func publish(_ data: String, routingKey: String = "")
-        async throws
-    {
+    func publish(_ data: String, routingKey: String = "") async throws {
         var firstAttempt = true
 
-        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+        while !Task.isCancelledOrShuttingDown {
             do {
                 try await connection.performPublish(configuration, data, routingKey: routingKey)
                 break
