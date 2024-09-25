@@ -8,6 +8,7 @@ struct RetryingConsumer: Sendable {
     let logger: Logger
 
     let retryInterval: Duration
+    let consumerWaitChannel = AsyncChannel<Void>()
     let consumeChannel = AsyncChannel<String>()
     let cancellationChannel = AsyncChannel<Void>()
 
@@ -41,20 +42,33 @@ struct RetryingConsumer: Sendable {
         try await Task.sleep(for: retryInterval)
     }
 
+    private func performSetupConsumer() async throws {
+        // This will let the `consume()` method know that we either are consuming or failed
+        // Either way we want it to return
+        defer {
+            consumerWaitChannel.finish()
+        }
+
+        // Try to setup the consumer
+        try await connection.setupConsumer(configuration)
+    }
+
     private func performRetryingConsume() async throws {
         var firstAttempt = true
 
-        while !Task.isCancelled && !Task.isShuttingDownGracefully {
+        while !Task.isCancelledOrShuttingDown {
             do {
+                try await performSetupConsumer()
+
                 // Consume sequence and add to AsyncChannel
                 for try await message in try await connection.performConsume(configuration) {
                     logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
                     await consumeChannel.send(String(buffer: message.body))
                 }
-                logger.debug("Consumer for queue \(configuration.queueName) completed...")
 
-                // Exit on cancellation
-                if Task.isCancelled || Task.isShuttingDownGracefully {
+                // Consumer completed, exit if the Task is cancelled
+                logger.debug("Consumer for queue \(configuration.queueName) completed...")
+                if Task.isCancelledOrShuttingDown {
                     break
                 }
 
@@ -83,9 +97,12 @@ struct RetryingConsumer: Sendable {
     func consume() async throws -> ConsumerChannel<String> {
         // We spin off an unstructured task here for the consumer
         // It will be invariably linked to the ConsumerChannel instance that is created
-        Task {
-            try await run()
-        }
+        Task { try await run() }
+
+        // Wait for initial consume before returning channel
+        await consumerWaitChannel.waitUntilFinished()
+
+        // Return a new channel
         return ConsumerChannel(consumeChannel: consumeChannel, cancellationChannel: cancellationChannel)
     }
 }

@@ -1,9 +1,7 @@
 import AMQPClient
 
 extension Connection {
-    func performConsume(_ configuration: ConsumerConfiguration) async throws -> AMQPSequence<
-        AMQPResponse.Channel.Message.Delivery
-    > {
+    func setupConsumer(_ configuration: ConsumerConfiguration) async throws {
         guard let channel = try await getChannel() else {
             throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
         }
@@ -18,6 +16,14 @@ extension Connection {
         try await channel.queueBind(
             configuration.queueName, configuration.exchangeName, configuration.routingKey, configuration.bindingOptions,
             logger)
+    }
+
+    func performConsume(_ configuration: ConsumerConfiguration) async throws -> AMQPSequence<
+        AMQPResponse.Channel.Message.Delivery
+    > {
+        guard let channel = try await getChannel() else {
+            throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
+        }
 
         // Consume on queue
         return try await channel.consume(configuration.queueName, configuration.consumerOptions, logger)
