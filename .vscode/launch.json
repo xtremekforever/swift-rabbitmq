@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "type": "lldb",
+            "type": "swift-lldb",
             "request": "launch",
             "sourceLanguages": [
                 "swift"
@@ -13,7 +13,7 @@
             "preLaunchTask": "swift: Build Debug BasicConsumePublish"
         },
         {
-            "type": "lldb",
+            "type": "swift-lldb",
             "request": "launch",
             "sourceLanguages": [
                 "swift"
@@ -25,7 +25,7 @@
             "preLaunchTask": "swift: Build Release BasicConsumePublish"
         },
         {
-            "type": "lldb",
+            "type": "swift-lldb",
             "request": "launch",
             "sourceLanguages": [
                 "swift"
@@ -37,7 +37,7 @@
             "preLaunchTask": "swift: Build Debug ConsumePublishServices"
         },
         {
-            "type": "lldb",
+            "type": "swift-lldb",
             "request": "launch",
             "sourceLanguages": [
                 "swift"
