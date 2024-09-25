@@ -32,12 +32,12 @@ public struct Consumer: Sendable {
     }
 
     public func consume() async throws -> AnyAsyncSequence<String> {
-        // Setup the consumer before returning the AsyncSequence
-        try await connection.setupConsumer(configuration)
+        // Start consuming
+        let consumeStream = try await connection.performConsume(configuration)
 
-        // Consume and wrap in AsyncString
+        // Wrap stream events in an AnyAsyncSequence<String>
         return AnyAsyncSequence<String>(
-            try await connection.performConsume(configuration).compactMap { message in
+            consumeStream.compactMap { message in
                 return String(buffer: message.body)
             }
         )

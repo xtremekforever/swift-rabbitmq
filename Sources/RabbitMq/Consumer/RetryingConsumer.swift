@@ -42,15 +42,15 @@ struct RetryingConsumer: Sendable {
         try await Task.sleep(for: retryInterval)
     }
 
-    private func performSetupConsumer() async throws {
+    private func performConsume() async throws -> AMQPSequence<AMQPResponse.Channel.Message.Delivery> {
         // This will let the `consume()` method know that we either are consuming or failed
         // Either way we want it to return
         defer {
             consumerWaitChannel.finish()
         }
 
-        // Try to setup the consumer
-        try await connection.setupConsumer(configuration)
+        // Start consuming
+        return try await connection.performConsume(configuration)
     }
 
     private func performRetryingConsume() async throws {
@@ -58,10 +58,10 @@ struct RetryingConsumer: Sendable {
 
         while !Task.isCancelledOrShuttingDown {
             do {
-                try await performSetupConsumer()
+                let consumeStream = try await performConsume()
 
                 // Consume sequence and add to AsyncChannel
-                for try await message in try await connection.performConsume(configuration) {
+                for try await message in consumeStream {
                     logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
                     await consumeChannel.send(String(buffer: message.body))
                 }
