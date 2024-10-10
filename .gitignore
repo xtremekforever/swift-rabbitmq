@@ -93,3 +93,6 @@ iOSInjectionProject/
 *.zst
 *.gz
 *.txt
+
+# VSCode
+launch.json
