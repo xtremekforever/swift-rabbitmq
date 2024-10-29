@@ -14,7 +14,7 @@ public protocol Connection: Sendable {
     /// Required by `Consumer` and `Publisher` for logging purposes.
     var logger: Logger { get }
 
-    /// The interval to use for polling the connection. Used by `waitForConnection()`
+    /// The interval to use for polling the connection. Used by `waitForConnection()`.
     var connectionPollingInterval: Duration { get }
 
     /// The URL for the RabbitMQ connection that was configured.
