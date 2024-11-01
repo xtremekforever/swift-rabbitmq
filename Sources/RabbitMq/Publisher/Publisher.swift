@@ -3,6 +3,15 @@ import Logging
 import NIOCore
 
 /// Structure for a RabbitMq "publisher", which sends an AMQP message on an exchange.
+///
+/// Usage example:
+/// ```swift
+/// // This assumes that `basicConnection` was created previously and is connected
+/// let publisher = Publisher(
+///     basicConnection, "MyDemoExchange", exchangeOptions: .init(type: .fanout)
+/// )
+/// try await publisher.publish("Publish this!")
+/// ```
 public struct Publisher: Sendable {
     let connection: Connection
     let configuration: PublisherConfiguration
