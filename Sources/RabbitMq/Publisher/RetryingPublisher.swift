@@ -1,5 +1,6 @@
 import AMQPClient
 import Logging
+import NIOCore
 
 struct RetryingPublisher: Sendable {
     let connection: Connection
@@ -18,7 +19,7 @@ struct RetryingPublisher: Sendable {
         self.retryInterval = retryInterval
     }
 
-    func publish(_ data: String, routingKey: String = "") async throws {
+    func publish(_ data: ByteBuffer, routingKey: String = "") async throws {
         var firstAttempt = true
 
         while !Task.isCancelledOrShuttingDown {

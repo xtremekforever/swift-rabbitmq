@@ -1,9 +1,9 @@
 import AMQPClient
 
 extension Connection {
-    func performConsume(_ configuration: ConsumerConfiguration) async throws -> AMQPSequence<
-        AMQPResponse.Channel.Message.Delivery
-    > {
+    func performConsume(
+        _ configuration: ConsumerConfiguration
+    ) async throws -> AMQPSequence<AMQPResponse.Channel.Message.Delivery> {
         guard let channel = try await getChannel() else {
             throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
         }

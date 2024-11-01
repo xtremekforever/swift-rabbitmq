@@ -6,7 +6,14 @@ import NIOSSL
 import Semaphore
 import ServiceLifecycle
 
-/// Basic connection RabbitMQ. Does not provide any connection recovery.
+/// Basic connection to a RabbitMQ broker. Does not provide any connection recovery.
+///
+/// Usage example:
+/// ```swift
+/// let basicConnection = BasicConnection("amqp://localhost/%2f")
+/// try await basicConnection.connect()
+/// // create a Publisher or Consumer passing the basicConnection to it
+/// ```
 public actor BasicConnection: Connection {
     private var url: String
     private var tls: TLSConfiguration?
@@ -39,7 +46,7 @@ public actor BasicConnection: Connection {
     ///   - tls: Optional `TLSConfiguration` to use for connection.
     ///   - eventLoop: Event loop to use for internal futures API of `rabbitmq-nio`.
     ///   - logger: Logger to use for this connection and all consumers/publishers associated to this connection.
-    ///   - connectionPollingInterval: Interval to use to poll for connection. *Must* be greater than 0 seconds.
+    ///   - connectionPollingInterval: Interval to use to poll for connection. *Must* be greater than 0 milliseconds.
     public init(
         _ url: String,
         tls: TLSConfiguration? = nil,
@@ -47,7 +54,7 @@ public actor BasicConnection: Connection {
         logger: Logger = Logger(label: String(describing: BasicConnection.self)),
         connectionPollingInterval: Duration = DefaultConnectionPollingInterval
     ) {
-        assert(connectionPollingInterval > .seconds(0))
+        assert(connectionPollingInterval > .milliseconds(0))
 
         self.url = url
         self.tls = tls

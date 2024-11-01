@@ -1,20 +1,20 @@
 import AMQPClient
-import NIO
+import NIOCore
 
 extension Connection {
-    func performPublish(_ configuration: PublisherConfiguration, _ data: String, routingKey: String = "")
-        async throws
-    {
+    func performPublish(
+        _ configuration: PublisherConfiguration, _ buffer: ByteBuffer, routingKey: String = ""
+    ) async throws {
         guard let channel = try await getChannel() else {
             throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
         }
 
-        // Declare exchange (only if declare = true)
+        // Declare exchange (only if exchangeName is not empty)
         try await channel.exchangeDeclare(configuration.exchangeName, configuration.exchangeOptions, logger)
 
         // Publish the message
         _ = try await channel.publish(
-            ByteBuffer(string: data),
+            buffer,
             configuration.exchangeName,
             routingKey,
             configuration.publisherOptions,

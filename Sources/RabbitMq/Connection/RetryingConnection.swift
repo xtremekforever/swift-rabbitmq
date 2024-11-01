@@ -5,7 +5,18 @@ import NIO
 import NIOSSL
 import ServiceLifecycle
 
-/// Retrying connection to RabbitMQ. Provides full connection recovery patterns.
+/// Retrying connection to a RabbitMQ broker. Provides full connection recovery patterns.
+///
+/// Usage example:
+/// ```swift
+/// let retryingConnection = RetryingConnection("amqp://localhost/%2f", reconnectionInterval: .seconds(15))
+/// await withDiscardingTaskGroup { group in
+///     group.addTask { await retryingConnection.run() }
+///     // other tasks for consuming/publishing here
+/// }
+/// ```
+/// A task or task group can be used to `run()` the connection, but [swift-service-lifecycle](https://github.com/swift-server/swift-service-lifecycle)
+/// can also be used to run the connection with full graceful shutdown support.
 public actor RetryingConnection: Connection, Service {
     private let basicConnection: BasicConnection
     private var reconnectionInterval: Duration
