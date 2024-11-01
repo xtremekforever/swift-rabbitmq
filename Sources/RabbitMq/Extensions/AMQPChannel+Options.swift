@@ -46,7 +46,7 @@ extension AMQPChannel {
         )
     }
 
-    public func queueBind(
+    func queueBind(
         _ queueName: String,
         _ exchangeName: String,
         _ routingKey: String,
