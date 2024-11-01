@@ -1,8 +1,11 @@
 import AMQPClient
 import Logging
 
-/// This is the default for all connections, but can be customized per-connection
-/// to increase responsiveness or reduce CPU usage.
+/// Default interval at which to poll a connection when using `waitForConnection()` or
+/// when monitoring the connection in `RetyingConnection`.
+///
+/// This defaults to `250ms` and is the default polling interval for all connections,
+/// but can be customized per-connection to increase responsiveness or reduce CPU usage.
 public let DefaultConnectionPollingInterval = Duration.milliseconds(250)
 
 /// Abstraction for a high-level connection to RabbitMQ.

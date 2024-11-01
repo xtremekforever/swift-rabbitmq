@@ -7,6 +7,13 @@ import Semaphore
 import ServiceLifecycle
 
 /// Basic connection to a RabbitMQ broker. Does not provide any connection recovery.
+///
+/// Usage example:
+/// ```swift
+/// let basicConnection = BasicConnection("amqp://localhost/%2f")
+/// try await basicConnection.connect()
+/// // create a Publisher or Consumer passing the basicConnection to it
+/// ```
 public actor BasicConnection: Connection {
     private var url: String
     private var tls: TLSConfiguration?
