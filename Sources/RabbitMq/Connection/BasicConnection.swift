@@ -6,7 +6,7 @@ import NIOSSL
 import Semaphore
 import ServiceLifecycle
 
-/// Basic connection RabbitMQ. Does not provide any connection recovery.
+/// Basic connection to a RabbitMQ broker. Does not provide any connection recovery.
 public actor BasicConnection: Connection {
     private var url: String
     private var tls: TLSConfiguration?

@@ -5,7 +5,7 @@ import NIO
 import NIOSSL
 import ServiceLifecycle
 
-/// Retrying connection to RabbitMQ. Provides full connection recovery patterns.
+/// Retrying connection to a RabbitMQ broker. Provides full connection recovery patterns.
 public actor RetryingConnection: Connection, Service {
     private let basicConnection: BasicConnection
     private var reconnectionInterval: Duration
