@@ -33,7 +33,7 @@ Then, add it to your target dependencies section like this:
 
 ## Dependencies
 
-This library only supports Swift 5.9 or later, since the underlying [rabbitmq-nio](https://github.com/funcmike/rabbitmq-nio) library also depends on Swift 5.9 or later.
+This library only supports Swift 5.10 or later, since the underlying [Semaphore](https://github.com/groue/Semaphore) library requires at least 5.10.
 
 Also, this library requires an accessible instance of [RabbitMQ](https://www.rabbitmq.com/) running somewhere either inside of a [Docker container](https://hub.docker.com/_/rabbitmq) or on another host.
 
@@ -61,7 +61,7 @@ for await message in stream {
 await connection.close()
 ```
 
-Every option that is supported by RabbitMQ can be passed to the `Publisher` and `Consumer`, so have a look at the API documentation to see what is available.
+Every option that is supported by RabbitMQ can be passed to the `Publisher` and `Consumer`, so have a look at the [API documentation](https://swiftpackageindex.com/xtremekforever/swift-rabbitmq/main/documentation/rabbitmq) to see what is available.
 
 For more advanced usage examples, see the example projects:
 
