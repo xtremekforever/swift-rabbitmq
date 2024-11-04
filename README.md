@@ -70,10 +70,7 @@ For connection recovery patterns, separate tasks must be used since the `Retryin
 ```swift
 import RabbitMq
 
-let connection = RetryingConnection(
-    "amqp://guest:guest@localhost/%2f",
-    reconnectionInterval: .seconds(10)
-)
+let connection = RetryingConnection("amqp://guest:guest@localhost/%2f", reconnectionInterval: .seconds(10))
 let publisher = Publisher(connection, "MyExchange")
 let consumer = Consumer(connection, "MyQueue", "MyExchange")
 
@@ -86,18 +83,14 @@ try await withThrowingDiscardingTaskGroup { group in
     // Retrying Publisher
     group.addTask { 
         while !Task.isCancelled {
-            try await publisher.retryingPublish(
-                "Hi there!", retryInterval: .seconds(5)
-            )
+            try await publisher.retryingPublish("Hi there!", retryInterval: .seconds(5))
             try await Task.sleep(for: .seconds(1))
         }
     }
     
     // Retrying Consumer
     group.addTask {
-        let events = try await consumer.retryingConsume(
-            retryInterval: .seconds(5)
-        )
+        let events = try await consumer.retryingConsume(retryInterval: .seconds(5))
         for await message in events {
             print(message)
         }
