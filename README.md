@@ -42,6 +42,8 @@ Also, this library requires an accessible instance of [RabbitMQ](https://www.rab
 At the most basic, this library can be used as follows:
 
 ```swift
+import RabbitMq
+
 // Create connection and connect to the broker
 let connection = BasicConnection("amqp://guest:guest@localhost/%2f")
 try await connection.connect()
@@ -63,10 +65,52 @@ await connection.close()
 
 Every option that is supported by RabbitMQ can be passed to the `Publisher` and `Consumer`, so have a look at the [API documentation](https://swiftpackageindex.com/xtremekforever/swift-rabbitmq/main/documentation/rabbitmq) to see what is available.
 
+For connection recovery patterns, separate tasks must be used since the `RetryingConnection.run()` method runs as an async task to supervise the connection. Example:
+
+```swift
+import RabbitMq
+
+let connection = RetryingConnection(
+    "amqp://guest:guest@localhost/%2f",
+    reconnectionInterval: .seconds(10)
+)
+let publisher = Publisher(connection, "MyExchange")
+let consumer = Consumer(connection, "MyQueue", "MyExchange")
+
+try await withThrowingDiscardingTaskGroup { group in
+    // Retrying Connection
+    group.addTask {
+        try await connection.run()
+    }
+
+    // Retrying Publisher
+    group.addTask { 
+        while !Task.isCancelled {
+            try await publisher.retryingPublish(
+                "Hi there!", retryInterval: .seconds(5)
+            )
+            try await Task.sleep(for: .seconds(1))
+        }
+    }
+    
+    // Retrying Consumer
+    group.addTask {
+        let events = try await consumer.retryingConsume(
+            retryInterval: .seconds(5)
+        )
+        for await message in events {
+            print(message)
+        }
+    }
+}
+
+// note: the `connection.run()` method will close the connection when it exits
+```
+
 For more advanced usage examples, see the example projects:
 
 - [BasicConsumePublish](./Sources/Examples/BasicConsumePublish/): Example of publishing and consuming with no connection recovery patterns.
-- [ConsumePublishServices](./Sources/Examples/ConsumePublishServices/): Example of using `swift-service-lifecycle` to connect to RabbitMQ, publish, and consume, all with connection recovery enabled.
+- [ConsumePublishServices](./Sources/Examples/ConsumePublishServices/): Example of using `swift-service-lifecycle` to connect, publish, and consume with connection recovery enabled.
 
 ## Contributions
 
