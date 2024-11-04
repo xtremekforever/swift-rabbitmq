@@ -1,13 +1,12 @@
-import Logging
 import NIO
 import RabbitMq
 
 // Create connection and connect to the broker
-let connection = RabbitMq.BasicConnection("amqp://guest:guest@localhost/%2F")
+let connection = BasicConnection("amqp://guest:guest@localhost/%2F")
 try await connection.connect()
 
 // Use structured task group to run examples
-try await withThrowingTaskGroup(of: Void.self) { group in
+try await withThrowingDiscardingTaskGroup { group in
 
     // Exchange options are shared between consumer and publisher
     let exchangeOptions = ExchangeOptions(
@@ -18,7 +17,7 @@ try await withThrowingTaskGroup(of: Void.self) { group in
     // Create consumer and start consuming
     group.addTask {
         print("Starting test Consumer...")
-        let consumer = RabbitMq.Consumer(
+        let consumer = Consumer(
             connection,
             "MyTestQueue",
             "MyTestExchange",
@@ -33,7 +32,7 @@ try await withThrowingTaskGroup(of: Void.self) { group in
     // Create publisher and start publishing
     group.addTask {
         print("Starting test Publisher...")
-        let publisher = RabbitMq.Publisher(
+        let publisher = Publisher(
             connection,
             "MyTestExchange",
             exchangeOptions: exchangeOptions
@@ -45,9 +44,6 @@ try await withThrowingTaskGroup(of: Void.self) { group in
             try await Task.sleep(for: .seconds(1))
         }
     }
-
-    try await group.next()
-    group.cancelAll()
 }
 
 print("Done!")
