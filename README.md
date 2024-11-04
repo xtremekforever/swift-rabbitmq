@@ -1,5 +1,8 @@
 # RabbitMq Library for Swift
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fxtremekforever%2Fswift-rabbitmq%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/xtremekforever/swift-rabbitmq)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fxtremekforever%2Fswift-rabbitmq%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/xtremekforever/swift-rabbitmq)
+
 This is a high-level RabbitMQ (AMQP) library for Swift that is heavily inspired by the [go-rabbitmq](https://github.com/wagslane/go-rabbitmq) library. It uses [rabbitmq-nio](https://github.com/funcmike/rabbitmq-nio) under the hood but provides high-level abstractions to make the user experience easier, and provides functionality that most applications can use out of the box.
 
 This library is designed to be used specifically with RabbitMQ for AMQP messaging. It is not designed to be used with any other AMQP-compatible brokers.
@@ -22,7 +25,7 @@ In the end, the goal of this library is to provide a nice API for applications t
 Add the following dependency to your Package.swift file:
 
 ```swift
-.package(url: "https://github.com/xtremekforever/swift-rabbitmq", branch: "main")
+.package(url: "https://github.com/xtremekforever/swift-rabbitmq", from: "0.1.0")
 ```
 
 Then, add it to your target dependencies section like this:
