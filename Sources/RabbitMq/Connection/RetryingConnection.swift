@@ -68,8 +68,6 @@ public actor RetryingConnection: Connection, Service {
     public func reconfigure(
         with url: String, tls: TLSConfiguration? = nil, reconnectionInterval: Duration? = nil
     ) async {
-        await basicConnection.reconfigure(with: url, tls: tls)
-
         // Update reconnection interval, this will apply on the next reconnection
         if let reconnectionInterval {
             if reconnectionInterval != self.reconnectionInterval {
@@ -78,6 +76,9 @@ public actor RetryingConnection: Connection, Service {
                 self.reconnectionInterval = reconnectionInterval
             }
         }
+
+        // Reconfigure connection after updating our own configuration
+        await basicConnection.reconfigure(with: url, tls: tls)
     }
 
     /// Method to connect to RabbitMQ and provide connection recovery and monitoring.
