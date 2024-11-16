@@ -35,14 +35,14 @@ public actor RetryingConnection: Connection, Service {
     ///
     /// - Parameters:
     ///   - url: URL to use to connect to RabbitMQ. Example: `amqp://localhost/%2f`
-    ///   - tls: Optional `TLSConfiguration` to use for connection.
+    ///   - configuration: Customize configuration for this connection, including TLS configuration, timeout, and connection name.
     ///   - eventLoop: Event loop to use for internal futures API of `rabbitmq-nio`.
     ///   - reconnectionInterval: Interval to use to reconnect to broker or connection error or lost connection.
     ///   - logger: Logger to use for this connection and all consumers/publishers associated to this connection.
     ///   - connectionPollingInterval: Interval to use to poll for connection. *Must* be greater than 0 seconds.
     public init(
         _ url: String,
-        tls: TLSConfiguration? = nil,
+        configuration: ConnectionConfiguration = .init(),
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         reconnectionInterval: Duration = .seconds(30),
         logger: Logger = Logger(label: "\(RetryingConnection.self)"),
@@ -50,7 +50,7 @@ public actor RetryingConnection: Connection, Service {
     ) {
         assert(connectionPollingInterval > .seconds(0))
 
-        self.basicConnection = BasicConnection(url, tls: tls, eventLoop: eventLoop, logger: logger)
+        self.basicConnection = BasicConnection(url, configuration: configuration, eventLoop: eventLoop, logger: logger)
         self.reconnectionInterval = reconnectionInterval
         self.logger = logger
         self.connectionPollingInterval = connectionPollingInterval
@@ -66,7 +66,7 @@ public actor RetryingConnection: Connection, Service {
     ///   - tls: Optional `TLSConfiguration` to use for connection.
     ///   - reconnectionInterval: Interval to use to reconnect to broker or connection error or lost connection.
     public func reconfigure(
-        with url: String, tls: TLSConfiguration? = nil, reconnectionInterval: Duration? = nil
+        with url: String, configuration: ConnectionConfiguration = .init(), reconnectionInterval: Duration? = nil
     ) async {
         // Update reconnection interval, this will apply on the next reconnection
         if let reconnectionInterval {
@@ -78,7 +78,7 @@ public actor RetryingConnection: Connection, Service {
         }
 
         // Reconfigure connection after updating our own configuration
-        await basicConnection.reconfigure(with: url, tls: tls)
+        await basicConnection.reconfigure(with: url, configuration: configuration)
     }
 
     /// Method to connect to RabbitMQ and provide connection recovery and monitoring.

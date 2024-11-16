@@ -19,7 +19,7 @@ struct RabbitMqService: Service {
         var tls = TLSConfiguration.makeClientConfiguration()
         tls.certificateVerification = .none
         connection = RetryingConnection(
-            connectionUrl, tls: tls, reconnectionInterval: .seconds(15), logger: logger
+            connectionUrl, configuration: .init(tls: tls), reconnectionInterval: .seconds(15), logger: logger
         )
     }
 
