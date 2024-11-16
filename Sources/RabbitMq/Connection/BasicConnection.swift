@@ -37,6 +37,7 @@ public actor BasicConnection: Connection {
     private var connection: AMQPConnection?
 
     private var connecting = false
+    private var reconfiguring = false
     private let channelSemaphore = AsyncSemaphore(value: 1)
 
     /// Create a `BasicConnection` instance.
@@ -71,7 +72,7 @@ public actor BasicConnection: Connection {
     ///
     /// - Throws: `AMQPConnectionError` if unable to connect.
     public func connect() async throws {
-        if isConnected || connecting {
+        if isConnected || connecting || reconfiguring {
             return
         }
 
@@ -97,15 +98,23 @@ public actor BasicConnection: Connection {
     ///   - url: URL to use to connect to RabbitMQ. Example: `amqp://localhost/%2f`
     ///   - tls: Optional `TLSConfiguration` to use for connection.
     public func reconfigure(with url: String, tls: TLSConfiguration? = nil) async {
+        // Reset reconfiguring flag when exiting
+        defer {
+            reconfiguring = false
+        }
+
         // If the URL changes
         if url != self.url {
             logger.debug("Received call to reconfigure connection from \(self.url) -> \(url)")
+
+            // While this flag is true, connect() will not be allowed to connect
+            reconfiguring = true
 
             // Close any existing connection
             await close()
         }
 
-        // Update configuration
+        // Update configuration before closing connection
         self.url = url
         self.tls = tls
     }
