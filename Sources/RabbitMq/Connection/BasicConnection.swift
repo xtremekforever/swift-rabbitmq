@@ -2,6 +2,7 @@ import AMQPClient
 import Foundation
 import Logging
 import NIO
+import NIOCore
 import NIOSSL
 import Semaphore
 import ServiceLifecycle
@@ -16,7 +17,7 @@ import ServiceLifecycle
 /// ```
 public actor BasicConnection: Connection {
     private var url: String
-    private var tls: TLSConfiguration?
+    private var configuration: ConnectionConfiguration
     private let eventLoop: EventLoop
 
     // Protocol conformances
@@ -44,13 +45,13 @@ public actor BasicConnection: Connection {
     ///
     /// - Parameters:
     ///   - url: URL to use to connect to RabbitMQ. Example: `amqp://localhost/%2f`
-    ///   - tls: Optional `TLSConfiguration` to use for connection.
+    ///   - configuration: Customize configuration for this connection, including TLS configuration, timeout, and connection name.
     ///   - eventLoop: Event loop to use for internal futures API of `rabbitmq-nio`.
     ///   - logger: Logger to use for this connection and all consumers/publishers associated to this connection.
     ///   - connectionPollingInterval: Interval to use to poll for connection. *Must* be greater than 0 milliseconds.
     public init(
         _ url: String,
-        tls: TLSConfiguration? = nil,
+        configuration: ConnectionConfiguration = .init(),
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         logger: Logger = Logger(label: String(describing: BasicConnection.self)),
         connectionPollingInterval: Duration = DefaultConnectionPollingInterval
@@ -58,7 +59,7 @@ public actor BasicConnection: Connection {
         assert(connectionPollingInterval > .milliseconds(0))
 
         self.url = url
-        self.tls = tls
+        self.configuration = configuration
         self.eventLoop = eventLoop
         self.logger = logger
         self.connectionPollingInterval = connectionPollingInterval
@@ -84,7 +85,11 @@ public actor BasicConnection: Connection {
         logger.info("Connecting to broker at \(url)")
         connection = try await AMQPConnection.connect(
             use: eventLoop,
-            from: AMQPConnectionConfiguration(url: url, tls: tls)
+            from: AMQPConnectionConfiguration(
+                url: url, tls: configuration.tls,
+                timeout: TimeAmount(configuration.timeout),
+                connectionName: configuration.connectionName ?? logger.label
+            )
         )
         logger.info("Connected to broker at \(url)")
     }
@@ -97,7 +102,7 @@ public actor BasicConnection: Connection {
     /// - Parameters:
     ///   - url: URL to use to connect to RabbitMQ. Example: `amqp://localhost/%2f`
     ///   - tls: Optional `TLSConfiguration` to use for connection.
-    public func reconfigure(with url: String, tls: TLSConfiguration? = nil) async {
+    public func reconfigure(with url: String, configuration: ConnectionConfiguration = .init()) async {
         // Reset reconfiguring flag when exiting
         defer {
             reconfiguring = false
@@ -116,7 +121,7 @@ public actor BasicConnection: Connection {
 
         // Update configuration before closing connection
         self.url = url
-        self.tls = tls
+        self.configuration = configuration
     }
 
     /// Open or get a channel instance for the current connection.

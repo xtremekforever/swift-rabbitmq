@@ -1,6 +1,12 @@
 import AMQPClient
 import Logging
 
+/// Default timeout for a RabbitMQ connection to succeed.
+///
+/// The default in the base `rabbitmq-nio` library is also 60 seconds, but we define this
+/// as a `Duration` instead of a `TimeAmount`.
+public let DefaultConnectionTimeout = Duration.seconds(60)
+
 /// Default interval at which to poll a connection when using `waitForConnection()` or
 /// when monitoring the connection in `RetyingConnection`.
 ///
