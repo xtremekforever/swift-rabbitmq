@@ -30,12 +30,12 @@ struct ConsumerService: Service {
     }
 
     func run() async throws {
-        let consumer = Consumer(
+        let consumer = RetryingConsumer(
             rabbitMqConnection, "ConsumerServiceQueue", "ServiceExampleContract",
-            consumerOptions: .init(noAck: true)
+            consumerOptions: .init(noAck: true), retryInterval: .seconds(15)
         )
 
-        let events = try await consumer.retryingConsume(retryInterval: .seconds(15))
+        let events = try await consumer.consume()
         for await message in events.cancelOnGracefulShutdown() {
             processMessage(message)
         }

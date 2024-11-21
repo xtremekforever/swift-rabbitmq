@@ -16,8 +16,8 @@ struct PublisherService: Service {
     }
 
     func run() async throws {
-        let publisher = Publisher(
-            rabbitMqConnection, "ServiceExampleContract"
+        let publisher = RetryingPublisher(
+            rabbitMqConnection, "ServiceExampleContract", retryInterval: .seconds(15)
         )
 
         while !Task.isShuttingDownGracefully {
@@ -27,7 +27,7 @@ struct PublisherService: Service {
                 let json = String(data: jsonData, encoding: .utf8)
             {
                 logger.info("Publishing contract: \(contract)")
-                try await publisher.retryingPublish(json, retryInterval: .seconds(15))
+                try await publisher.publish(json)
                 try await Task.sleep(for: .seconds(1))
             }
         }

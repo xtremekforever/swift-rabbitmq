@@ -3,23 +3,37 @@ import AsyncAlgorithms
 import Logging
 import NIOCore
 
-struct RetryingConsumer: Sendable {
+public struct RetryingConsumer: Sendable {
     let connection: Connection
     let configuration: ConsumerConfiguration
     let logger: Logger
-
     let retryInterval: Duration
+
     let consumerWaitChannel = AsyncChannel<Void>()
     let consumeChannel = AsyncChannel<AMQPResponse.Channel.Message.Delivery>()
     let cancellationChannel = AsyncChannel<Void>()
 
-    init(
+    public init(
         _ connection: Connection,
-        _ configuration: ConsumerConfiguration,
-        _ retryInterval: Duration
+        _ queueName: String,
+        _ exchangeName: String = "",
+        _ routingKey: String = "",
+        exchangeOptions: ExchangeOptions = ExchangeOptions(),
+        queueOptions: QueueOptions = QueueOptions(),
+        bindingOptions: BindingOptions = BindingOptions(),
+        consumerOptions: ConsumerOptions = ConsumerOptions(),
+        retryInterval: Duration
     ) {
         self.connection = connection
-        self.configuration = configuration
+        self.configuration = ConsumerConfiguration(
+            queueName: queueName,
+            exchangeName: exchangeName,
+            routingKey: routingKey,
+            exchangeOptions: exchangeOptions,
+            queueOptions: queueOptions,
+            bindingOptions: bindingOptions,
+            consumerOptions: consumerOptions
+        )
         self.logger = connection.logger
         self.retryInterval = retryInterval
     }
@@ -104,17 +118,17 @@ struct RetryingConsumer: Sendable {
         await consumerWaitChannel.waitUntilFinished()
     }
 
-    func consumeDelivery() async throws -> ConsumerChannel<AMQPResponse.Channel.Message.Delivery> {
+    public func consumeDelivery() async throws -> ConsumerChannel<AMQPResponse.Channel.Message.Delivery> {
         await runAndWait()
         return ConsumerChannel(consumeChannel, cancellationChannel: cancellationChannel)
     }
 
-    func consumeBuffer() async throws -> ConsumerChannel<ByteBuffer> {
+    public func consumeBuffer() async throws -> ConsumerChannel<ByteBuffer> {
         await runAndWait()
         return ConsumerChannel(consumeChannel.compactMap { $0.body }, cancellationChannel: cancellationChannel)
     }
 
-    func consumeString() async throws -> ConsumerChannel<String> {
+    public func consume() async throws -> ConsumerChannel<String> {
         await runAndWait()
         return ConsumerChannel(
             consumeChannel.compactMap { String(buffer: $0.body) }, cancellationChannel: cancellationChannel
