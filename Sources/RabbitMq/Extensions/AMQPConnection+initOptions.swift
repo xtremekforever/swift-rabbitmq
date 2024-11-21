@@ -18,7 +18,7 @@ extension AMQPConnectionConfiguration {
         guard let scheme = UrlScheme(rawValue: url.scheme ?? "") else { throw AMQPConnectionError.invalidUrlScheme }
 
         // there is no such thing as a "" host
-        let host = url.host?.isEmpty == true ? nil : url.host
+        let host = url.host?.isEmpty == true ? nil : url.host?.removingPercentEncoding
         //special path magic for vhost interpretation (see https://www.rabbitmq.com/uri-spec.html)
         var vhost = url.path.isEmpty ? nil : String(url.path.removingPercentEncoding?.dropFirst() ?? "")
 
@@ -28,7 +28,8 @@ extension AMQPConnectionConfiguration {
         }
 
         let server = Server(
-            host: host, port: url.port ?? scheme.defaultPort, user: url.user,
+            host: host, port: url.port ?? scheme.defaultPort,
+            user: url.user?.removingPercentEncoding,
             password: url.password?.removingPercentEncoding, vhost: vhost,
             timeout: timeout, connectionName: connectionName
         )
