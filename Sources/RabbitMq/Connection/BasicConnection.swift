@@ -138,12 +138,12 @@ public actor BasicConnection: Connection {
             return nil
         }
 
-        // Ensure that only one task can open the channel at a time
-        await channelSemaphore.wait()
-        defer { channelSemaphore.signal() }
-
         // We're connected, let's reuse the channel
         guard let channel = self.channel, channel.isOpen else {
+            // Ensure that only one task can open the channel at a time
+            await channelSemaphore.wait()
+            defer { channelSemaphore.signal() }
+
             // Then open a channel
             self.channel = try await connection!.openChannel()
             return self.channel!
