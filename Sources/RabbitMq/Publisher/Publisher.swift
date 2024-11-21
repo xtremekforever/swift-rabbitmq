@@ -42,12 +42,23 @@ public struct Publisher: Sendable {
     /// Publish a message to the broker (no retries).
     ///
     /// - Parameters:
+    ///   - data: The buffer of data to publish.
+    ///   - routingKey: The optional routing key to use for publishing the message.
+    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
+    ///         or an `NIO` or `AMQPClient` error.
+    public func publish(_ data: ByteBuffer, routingKey: String = "") async throws {
+        try await connection.performPublish(configuration, data, routingKey: routingKey)
+    }
+
+    /// Publish a message to the broker (no retries).
+    ///
+    /// - Parameters:
     ///   - data: The string data of the message to publish. This string will be encoded to UTF-8 before sending.
     ///   - routingKey: The optional routing key to use for publishing the message.
     /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
     ///         or an `NIO` or `AMQPClient` error.
     public func publish(_ data: String, routingKey: String = "") async throws {
-        try await connection.performPublish(configuration, ByteBuffer(string: data), routingKey: routingKey)
+        try await publish(ByteBuffer(string: data), routingKey: routingKey)
     }
 
     /// Publish a message to the broker with retries.
@@ -85,8 +96,6 @@ public struct Publisher: Sendable {
     public func retryingPublish(
         _ data: String, routingKey: String = "", retryInterval: Duration = .seconds(30)
     ) async throws {
-        return try await RetryingPublisher(connection, configuration, retryInterval).publish(
-            ByteBuffer(string: data), routingKey: routingKey
-        )
+        return try await retryingPublish(ByteBuffer(string: data), routingKey: routingKey, retryInterval: retryInterval)
     }
 }
