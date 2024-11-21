@@ -17,7 +17,7 @@ import NIO
 /// }
 /// ```
 public struct Consumer: Sendable {
-    let connection: Connection
+    let channel: AMQPChannel
     let configuration: ConsumerConfiguration
     let logger: Logger
 
@@ -41,8 +41,8 @@ public struct Consumer: Sendable {
         queueOptions: QueueOptions = QueueOptions(),
         bindingOptions: BindingOptions = BindingOptions(),
         consumerOptions: ConsumerOptions = ConsumerOptions()
-    ) {
-        self.connection = connection
+    ) async throws {
+        self.channel = try await connection.getChannel()
         self.configuration = ConsumerConfiguration(
             queueName: queueName,
             exchangeName: exchangeName,
@@ -53,6 +53,22 @@ public struct Consumer: Sendable {
             consumerOptions: consumerOptions
         )
         self.logger = connection.logger
+
+        // Declare exchange (only if declare = true)
+        try await channel.exchangeDeclare(configuration.exchangeName, configuration.exchangeOptions, logger)
+
+        // Declare queue (only if declare = true)
+        try await channel.queueDeclare(configuration.queueName, configuration.queueOptions, logger)
+
+        // Declare binding to exhange if provided
+        try await channel.queueBind(
+            configuration.queueName, configuration.exchangeName, configuration.routingKey,
+            configuration.bindingOptions, logger
+        )
+    }
+
+    private func performConsume() async throws -> AMQPSequence<AMQPResponse.Channel.Message.Delivery> {
+        try await channel.consume(configuration.queueName, configuration.consumerOptions, logger)
     }
 
     /// Start consuming strings from the consumer (no retries).
@@ -62,7 +78,7 @@ public struct Consumer: Sendable {
     /// - Returns: an `AnyAsyncSequence` of `String` that contains each consumed message.
     public func consume() async throws -> AnyAsyncSequence<String> {
         // We starting consuming before wrapping the stream below
-        let consumeStream = try await connection.performConsume(configuration)
+        let consumeStream = try await performConsume()
         return .init(consumeStream.compactMap { String(buffer: $0.body) })
     }
 
@@ -73,7 +89,7 @@ public struct Consumer: Sendable {
     /// - Returns: an `AnyAsyncSequence` of `ByteBuffer` that contains each consumed message.
     public func consumeBuffer() async throws -> AnyAsyncSequence<ByteBuffer> {
         // We starting consuming before wrapping the stream below
-        let consumeStream = try await connection.performConsume(configuration)
+        let consumeStream = try await performConsume()
         return .init(consumeStream.compactMap { $0.body })
     }
 
@@ -84,59 +100,7 @@ public struct Consumer: Sendable {
     /// - Returns: an `AnyAsyncSequence` of `AMQPResponse.Channel.Message.Delivery` that contains each consumed message.
     public func consumeDelivery() async throws -> AnyAsyncSequence<AMQPResponse.Channel.Message.Delivery> {
         // We starting consuming before wrapping the stream below
-        let consumeStream = try await connection.performConsume(configuration)
+        let consumeStream = try await performConsume()
         return .init(consumeStream)
-    }
-
-    /// Start consuming strings from the consumer with retries.
-    ///
-    /// This method will attempt to reconnect/recreate the consumer if the connection to RabbitMQ is
-    /// lost or if an error occurs. Only task cancellation, graceful shutdown, or the consumer completing
-    /// will cause this to stop trying to consume on the broker.
-    ///
-    /// - Parameter retryInterval: The interval at which to retry consuming.
-    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
-    ///         or an `NIO` or `AMQPClient` error.
-    /// - Returns: a `ConsumerChannel` of type `String` that returns each consumed message.
-    public func retryingConsume(retryInterval: Duration = .seconds(30)) async throws -> ConsumerChannel<String> {
-        return try await RetryingConsumer(
-            connection, configuration, retryInterval
-        ).consumeString()
-    }
-
-    /// Start consuming from the consumer with retries.
-    ///
-    /// This method will attempt to reconnect/recreate the consumer if the connection to RabbitMQ is
-    /// lost or if an error occurs. Only task cancellation, graceful shutdown, or the consumer completing
-    /// will cause this to stop trying to consume on the broker.
-    ///
-    /// - Parameter retryInterval: The interval at which to retry consuming.
-    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
-    ///         or an `NIO` or `AMQPClient` error.
-    /// - Returns: a `ConsumerChannel` of type `ByteBuffer` that returns each consumed message.
-    public func retryingConsumeBuffer(
-        retryInterval: Duration = .seconds(30)
-    ) async throws -> ConsumerChannel<ByteBuffer> {
-        return try await RetryingConsumer(
-            connection, configuration, retryInterval
-        ).consumeBuffer()
-    }
-
-    /// Start consuming delivery messages from the consumer with retries.
-    ///
-    /// This method will attempt to reconnect/recreate the consumer if the connection to RabbitMQ is
-    /// lost or if an error occurs. Only task cancellation, graceful shutdown, or the consumer completing
-    /// will cause this to stop trying to consume on the broker.
-    ///
-    /// - Parameter retryInterval: The interval at which to retry consuming.
-    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
-    ///         or an `NIO` or `AMQPClient` error.
-    /// - Returns: a `ConsumerChannel` of type `AMQPResponse.Channel.Message.Delivery` that returns each consumed message.
-    public func retryingConsumeDelivery(
-        retryInterval: Duration = .seconds(30)
-    ) async throws -> ConsumerChannel<AMQPResponse.Channel.Message.Delivery> {
-        return try await RetryingConsumer(
-            connection, configuration, retryInterval
-        ).consumeDelivery()
     }
 }

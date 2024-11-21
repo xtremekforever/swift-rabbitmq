@@ -13,7 +13,7 @@ import NIOCore
 /// try await publisher.publish("Publish this!")
 /// ```
 public struct Publisher: Sendable {
-    let connection: Connection
+    let channel: AMQPChannel
     let configuration: PublisherConfiguration
     let logger: Logger
 
@@ -29,14 +29,16 @@ public struct Publisher: Sendable {
         _ exchangeName: String = "",
         exchangeOptions: ExchangeOptions = ExchangeOptions(),
         publisherOptions: PublisherOptions = PublisherOptions()
-    ) {
-        self.connection = connection
+    ) async throws {
+        self.channel = try await connection.getChannel()
         self.configuration = PublisherConfiguration(
             exchangeName: exchangeName,
             exchangeOptions: exchangeOptions,
             publisherOptions: publisherOptions
         )
         self.logger = connection.logger
+
+        try await channel.exchangeDeclare(configuration.exchangeName, configuration.exchangeOptions, logger)
     }
 
     /// Publish a message to the broker (no retries).
@@ -47,7 +49,13 @@ public struct Publisher: Sendable {
     /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
     ///         or an `NIO` or `AMQPClient` error.
     public func publish(_ data: ByteBuffer, routingKey: String = "") async throws {
-        try await connection.performPublish(configuration, data, routingKey: routingKey)
+        _ = try await channel.publish(
+            data,
+            configuration.exchangeName,
+            routingKey,
+            configuration.publisherOptions,
+            logger
+        )
     }
 
     /// Publish a message to the broker (no retries).
@@ -59,43 +67,5 @@ public struct Publisher: Sendable {
     ///         or an `NIO` or `AMQPClient` error.
     public func publish(_ data: String, routingKey: String = "") async throws {
         try await publish(ByteBuffer(string: data), routingKey: routingKey)
-    }
-
-    /// Publish a message to the broker with retries.
-    ///
-    /// This method will not return until it is cancelled or is able to publish the message.
-    /// It performs a publish operation but will retry indefinitely until it is able to
-    /// publish the message to the broker.
-    ///
-    /// - Parameters:
-    ///   - data: The NIO `ByteBuffer` data of the message to publish. This can be JSON, XML, or binary data.
-    ///   - routingKey: The optional routing key to use for publishing the message.
-    ///   - retryInterval: The interval at which to retry publishing the message.
-    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
-    ///         or an `NIO` or `AMQPClient` error.
-    public func retryingPublish(
-        _ data: ByteBuffer, routingKey: String = "", retryInterval: Duration = .seconds(30)
-    ) async throws {
-        return try await RetryingPublisher(connection, configuration, retryInterval).publish(
-            data, routingKey: routingKey
-        )
-    }
-
-    /// Publish a message to the broker with retries.
-    ///
-    /// This method will not return until it is cancelled or is able to publish the message.
-    /// It performs a publish operation but will retry indefinitely until it is able to
-    /// publish the message to the broker.
-    ///
-    /// - Parameters:
-    ///   - data: The string data of the message to publish. This string will be encoded to UTF-8 before sending.
-    ///   - routingKey: The optional routing key to use for publishing the message.
-    ///   - retryInterval: The interval at which to retry publishing the message.
-    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
-    ///         or an `NIO` or `AMQPClient` error.
-    public func retryingPublish(
-        _ data: String, routingKey: String = "", retryInterval: Duration = .seconds(30)
-    ) async throws {
-        return try await retryingPublish(ByteBuffer(string: data), routingKey: routingKey, retryInterval: retryInterval)
     }
 }

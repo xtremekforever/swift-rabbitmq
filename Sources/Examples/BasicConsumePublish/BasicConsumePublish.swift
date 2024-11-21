@@ -17,7 +17,7 @@ try await withThrowingDiscardingTaskGroup { group in
     // Create consumer and start consuming
     group.addTask {
         print("Starting test Consumer...")
-        let consumer = Consumer(
+        let consumer = try await Consumer(
             connection,
             "MyTestQueue",
             "MyTestExchange",
@@ -32,7 +32,7 @@ try await withThrowingDiscardingTaskGroup { group in
     // Create publisher and start publishing
     group.addTask {
         print("Starting test Publisher...")
-        let publisher = Publisher(
+        let publisher = try await Publisher(
             connection,
             "MyTestExchange",
             exchangeOptions: exchangeOptions
@@ -41,7 +41,7 @@ try await withThrowingDiscardingTaskGroup { group in
             print("Publishing test message...")
             try await publisher.publish("A message")
 
-            try await Task.sleep(for: .seconds(1))
+            try await Task.sleep(for: .milliseconds(10))
         }
     }
 }
