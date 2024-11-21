@@ -4,9 +4,7 @@ extension Connection {
     func performConsume(
         _ configuration: ConsumerConfiguration
     ) async throws -> AMQPSequence<AMQPResponse.Channel.Message.Delivery> {
-        guard let channel = try await getChannel() else {
-            throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
-        }
+        let channel = try await getChannel()
 
         // Declare exchange (only if declare = true)
         try await channel.exchangeDeclare(configuration.exchangeName, configuration.exchangeOptions, logger)

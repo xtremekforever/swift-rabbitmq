@@ -131,8 +131,8 @@ public actor RetryingConnection: Connection, Service {
     /// channels are not created by multiple concurrent tasks.
     ///
     /// - Throws: `AMQPConnectionError` if unable to connect.
-    /// - Returns: `AMQPChannel` if the channel could be opened or already exists. `nil` otherwise.
-    public func getChannel() async throws -> AMQPChannel? {
+    /// - Returns: `AMQPChannel` if the channel could be opened or already exists.
+    public func getChannel() async throws -> AMQPChannel {
         return try await basicConnection.getChannel()
     }
 }

@@ -131,11 +131,11 @@ public actor BasicConnection: Connection {
     /// channels are not created by multiple concurrent tasks.
     ///
     /// - Throws: `AMQPConnectionError` if unable to connect.
-    /// - Returns: `AMQPChannel` if the channel could be opened or already exists. `nil` otherwise.
-    public func getChannel() async throws -> AMQPChannel? {
+    /// - Returns: `AMQPChannel` if the channel could be opened or already exists.
+    public func getChannel() async throws -> AMQPChannel {
         // Not connected
         guard isConnected else {
-            return nil
+            throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
         }
 
         // We're connected, let's reuse the channel

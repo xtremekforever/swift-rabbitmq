@@ -40,8 +40,9 @@ public protocol Connection: Sendable {
 
     /// Get channel for the current RabbitMQ connection.
     ///
+    /// - Throws: `AMQPConnectionError.connectionClosed` if connection is not open.
     /// - Returns: `AMQPChannel` if connected, `nil` otherwise.
-    func getChannel() async throws -> AMQPChannel?
+    func getChannel() async throws -> AMQPChannel
 }
 
 extension Connection {
