@@ -4,7 +4,7 @@ import NIOCore
 extension Connection {
     func performPublish(
         _ configuration: PublisherConfiguration, _ buffer: ByteBuffer, routingKey: String = ""
-    ) async throws {
+    ) async throws -> AMQPResponse.Channel.Basic.Published {
         guard let channel = try await getChannel() else {
             throw AMQPConnectionError.connectionClosed(replyCode: nil, replyText: nil)
         }
@@ -13,7 +13,7 @@ extension Connection {
         try await channel.exchangeDeclare(configuration.exchangeName, configuration.exchangeOptions, logger)
 
         // Publish the message
-        _ = try await channel.publish(
+        return try await channel.publish(
             buffer,
             configuration.exchangeName,
             routingKey,

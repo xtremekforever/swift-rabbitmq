@@ -19,13 +19,14 @@ struct RetryingPublisher: Sendable {
         self.retryInterval = retryInterval
     }
 
-    func publish(_ data: ByteBuffer, routingKey: String = "") async throws {
+    @discardableResult func publish(
+        _ data: ByteBuffer, routingKey: String = ""
+    ) async throws -> AMQPResponse.Channel.Basic.Published? {
         var firstAttempt = true
 
         while !Task.isCancelledOrShuttingDown {
             do {
-                try await connection.performPublish(configuration, data, routingKey: routingKey)
-                break
+                return try await connection.performPublish(configuration, data, routingKey: routingKey)
             } catch AMQPConnectionError.connectionClosed(let replyCode, let replyText) {
                 if !firstAttempt {
                     let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
@@ -45,5 +46,7 @@ struct RetryingPublisher: Sendable {
                 try await Task.sleep(for: retryInterval)
             }
         }
+
+        return nil
     }
 }
