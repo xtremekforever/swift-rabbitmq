@@ -55,24 +55,40 @@ public struct Consumer: Sendable {
         self.logger = connection.logger
     }
 
-    /// Start consuming from the consumer (no retries).
+    /// Start consuming strings from the consumer (no retries).
     ///
     /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: an `AnyAsyncSequence` of `String` that contains each consumed message.
     public func consume() async throws -> AnyAsyncSequence<String> {
-        // Start consuming
+        // We starting consuming before wrapping the stream below
         let consumeStream = try await connection.performConsume(configuration)
-
-        // Wrap stream events in an AnyAsyncSequence<String>
-        return AnyAsyncSequence<String>(
-            consumeStream.compactMap { message in
-                return String(buffer: message.body)
-            }
-        )
+        return .init(consumeStream.compactMap { String(buffer: $0.body) })
     }
 
-    /// Start consuming from the consumer with retries.
+    /// Start consuming from the consumer (no retries).
+    ///
+    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
+    ///         or an `NIO` or `AMQPClient` error.
+    /// - Returns: an `AnyAsyncSequence` of `ByteBuffer` that contains each consumed message.
+    public func consumeBuffer() async throws -> AnyAsyncSequence<ByteBuffer> {
+        // We starting consuming before wrapping the stream below
+        let consumeStream = try await connection.performConsume(configuration)
+        return .init(consumeStream.compactMap { $0.body })
+    }
+
+    /// Start consuming delivery messages from the consumer (no retries).
+    ///
+    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
+    ///         or an `NIO` or `AMQPClient` error.
+    /// - Returns: an `AnyAsyncSequence` of `AMQPResponse.Channel.Message.Delivery` that contains each consumed message.
+    public func consumeDelivery() async throws -> AnyAsyncSequence<AMQPResponse.Channel.Message.Delivery> {
+        // We starting consuming before wrapping the stream below
+        let consumeStream = try await connection.performConsume(configuration)
+        return .init(consumeStream)
+    }
+
+    /// Start consuming strings from the consumer with retries.
     ///
     /// This method will attempt to reconnect/recreate the consumer if the connection to RabbitMQ is
     /// lost or if an error occurs. Only task cancellation, graceful shutdown, or the consumer completing
@@ -85,6 +101,42 @@ public struct Consumer: Sendable {
     public func retryingConsume(retryInterval: Duration = .seconds(30)) async throws -> ConsumerChannel<String> {
         return try await RetryingConsumer(
             connection, configuration, retryInterval
-        ).consume()
+        ).consumeString()
+    }
+
+    /// Start consuming from the consumer with retries.
+    ///
+    /// This method will attempt to reconnect/recreate the consumer if the connection to RabbitMQ is
+    /// lost or if an error occurs. Only task cancellation, graceful shutdown, or the consumer completing
+    /// will cause this to stop trying to consume on the broker.
+    ///
+    /// - Parameter retryInterval: The interval at which to retry consuming.
+    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
+    ///         or an `NIO` or `AMQPClient` error.
+    /// - Returns: a `ConsumerChannel` of type `ByteBuffer` that returns each consumed message.
+    public func retryingConsumeBuffer(
+        retryInterval: Duration = .seconds(30)
+    ) async throws -> ConsumerChannel<ByteBuffer> {
+        return try await RetryingConsumer(
+            connection, configuration, retryInterval
+        ).consumeBuffer()
+    }
+
+    /// Start consuming delivery messages from the consumer with retries.
+    ///
+    /// This method will attempt to reconnect/recreate the consumer if the connection to RabbitMQ is
+    /// lost or if an error occurs. Only task cancellation, graceful shutdown, or the consumer completing
+    /// will cause this to stop trying to consume on the broker.
+    ///
+    /// - Parameter retryInterval: The interval at which to retry consuming.
+    /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
+    ///         or an `NIO` or `AMQPClient` error.
+    /// - Returns: a `ConsumerChannel` of type `AMQPResponse.Channel.Message.Delivery` that returns each consumed message.
+    public func retryingConsumeDelivery(
+        retryInterval: Duration = .seconds(30)
+    ) async throws -> ConsumerChannel<AMQPResponse.Channel.Message.Delivery> {
+        return try await RetryingConsumer(
+            connection, configuration, retryInterval
+        ).consumeDelivery()
     }
 }

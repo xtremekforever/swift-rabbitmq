@@ -1,6 +1,7 @@
 import AMQPClient
 import AsyncAlgorithms
 import Logging
+import NIOCore
 
 struct RetryingConsumer: Sendable {
     let connection: Connection
@@ -9,7 +10,7 @@ struct RetryingConsumer: Sendable {
 
     let retryInterval: Duration
     let consumerWaitChannel = AsyncChannel<Void>()
-    let consumeChannel = AsyncChannel<String>()
+    let consumeChannel = AsyncChannel<AMQPResponse.Channel.Message.Delivery>()
     let cancellationChannel = AsyncChannel<Void>()
 
     init(
@@ -63,7 +64,7 @@ struct RetryingConsumer: Sendable {
                 // Consume sequence and add to AsyncChannel
                 for try await message in consumeStream {
                     logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
-                    await consumeChannel.send(String(buffer: message.body))
+                    await consumeChannel.send(message)
                 }
 
                 // Consumer completed, exit if the Task is cancelled
@@ -94,15 +95,29 @@ struct RetryingConsumer: Sendable {
         consumeChannel.finish()
     }
 
-    func consume() async throws -> ConsumerChannel<String> {
+    private func runAndWait() async {
         // We spin off an unstructured task here for the consumer
         // It will be invariably linked to the ConsumerChannel instance that is created
         Task { try await run() }
 
-        // Wait for initial consume before returning channel
+        // Wait for initial consume to start
         await consumerWaitChannel.waitUntilFinished()
+    }
 
-        // Return a new channel
-        return ConsumerChannel(consumeChannel: consumeChannel, cancellationChannel: cancellationChannel)
+    func consumeDelivery() async throws -> ConsumerChannel<AMQPResponse.Channel.Message.Delivery> {
+        await runAndWait()
+        return ConsumerChannel(consumeChannel, cancellationChannel: cancellationChannel)
+    }
+
+    func consumeBuffer() async throws -> ConsumerChannel<ByteBuffer> {
+        await runAndWait()
+        return ConsumerChannel(consumeChannel.compactMap { $0.body }, cancellationChannel: cancellationChannel)
+    }
+
+    func consumeString() async throws -> ConsumerChannel<String> {
+        await runAndWait()
+        return ConsumerChannel(
+            consumeChannel.compactMap { String(buffer: $0.body) }, cancellationChannel: cancellationChannel
+        )
     }
 }
