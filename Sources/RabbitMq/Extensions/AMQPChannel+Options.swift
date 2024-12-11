@@ -3,7 +3,7 @@ import Logging
 import NIO
 
 extension AMQPChannel {
-    func exchangeDeclare(
+    public func exchangeDeclare(
         _ exchangeName: String,
         _ exchangeOptions: ExchangeOptions,
         _ logger: Logger
@@ -25,7 +25,7 @@ extension AMQPChannel {
         )
     }
 
-    func queueDeclare(
+    public func queueDeclare(
         _ queueName: String,
         _ queueOptions: QueueOptions,
         _ logger: Logger
@@ -46,7 +46,7 @@ extension AMQPChannel {
         )
     }
 
-    func queueBind(
+    public func queueBind(
         _ queueName: String,
         _ exchangeName: String,
         _ routingKey: String,
@@ -68,7 +68,7 @@ extension AMQPChannel {
         )
     }
 
-    func consume(
+    public func consume(
         _ queueName: String,
         _ consumerOptions: ConsumerOptions,
         _ logger: Logger
@@ -83,7 +83,7 @@ extension AMQPChannel {
         )
     }
 
-    func publish(
+    public func publish(
         _ data: ByteBuffer,
         _ exchangeName: String = "",
         _ routingKey: String = "",
