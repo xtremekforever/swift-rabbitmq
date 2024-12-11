@@ -1,12 +1,13 @@
 {
+  "originHash" : "81ad0e24472152f4b115b6f8e95d1863b12cdb5b57a2d6c0925d1b9d06355d91",
   "pins" : [
     {
       "identity" : "rabbitmq-nio",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/funcmike/rabbitmq-nio",
       "state" : {
-        "revision" : "cb9c294fda00f57db116abd297df21d078b5d027",
-        "version" : "0.1.0-beta4"
+        "branch" : "main",
+        "revision" : "b7df1f750ee008f861792c10f8509388a82a314d"
       }
     },
     {
@@ -109,5 +110,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
