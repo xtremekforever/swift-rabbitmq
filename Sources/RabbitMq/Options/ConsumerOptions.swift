@@ -4,10 +4,10 @@ import AMQPProtocol
 ///
 /// This is the main configuration for a given `Consumer`.
 public struct ConsumerOptions: Sendable {
-    var consumerTag: String
-    var noAck: Bool
-    var exclusive: Bool
-    var args: Table
+    public var consumerTag: String
+    public var noAck: Bool
+    public var exclusive: Bool
+    public var args: Table
 
     /// Create the consumer options.
     ///

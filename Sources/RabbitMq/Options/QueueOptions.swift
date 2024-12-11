@@ -6,11 +6,11 @@ import AMQPProtocol
 /// Also, these options make it possible to define fixed configuration for many consumers
 /// using this struct.
 public struct QueueOptions: Sendable {
-    var autoDelete: Bool
-    var exclusive: Bool
-    var durable: Bool
-    var passive: Bool
-    var args: Table
+    public var autoDelete: Bool
+    public var exclusive: Bool
+    public var durable: Bool
+    public var passive: Bool
+    public var args: Table
 
     /// Create the queue options.
     ///

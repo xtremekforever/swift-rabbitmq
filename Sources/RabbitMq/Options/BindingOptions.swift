@@ -4,7 +4,7 @@ import AMQPProtocol
 ///
 /// This is used as part of the `Consumer` configuration options.
 public struct BindingOptions: Sendable {
-    var args: Table
+    public var args: Table
 
     /// Create the binding options for the queue.
     ///

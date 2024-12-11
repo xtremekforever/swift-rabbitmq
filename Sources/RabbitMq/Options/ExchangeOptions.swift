@@ -11,12 +11,12 @@ public enum ExchangeType: String, Sendable {
 /// to work. Also, these options make it possible to define fixed configuration for many publishers
 /// or consumers using this struct.
 public struct ExchangeOptions: Sendable {
-    var type: ExchangeType
-    var passive: Bool
-    var durable: Bool
-    var autoDelete: Bool
-    var `internal`: Bool
-    var args: Table
+    public var type: ExchangeType
+    public var passive: Bool
+    public var durable: Bool
+    public var autoDelete: Bool
+    public var `internal`: Bool
+    public var args: Table
 
     /// Create the exchange options.
     ///

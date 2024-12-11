@@ -2,9 +2,9 @@ import AMQPProtocol
 
 /// Definition of available options for publishing a message to RabbitMq.
 public struct PublisherOptions: Sendable {
-    var mandatory: Bool
-    var immediate: Bool
-    var properties: Properties
+    public var mandatory: Bool
+    public var immediate: Bool
+    public var properties: Properties
 
     /// Create the publisher options.
     ///
