@@ -1,6 +1,10 @@
 # Swift
 .build*/
+
+# Xcode
 *.plist
+*.xcworkspacedata
+*.xcuserstate
 
 # Heaptrack output
 *.zst
