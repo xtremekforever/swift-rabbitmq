@@ -40,6 +40,16 @@ This library only supports Swift 5.10 or later, since the underlying [Semaphore]
 
 Also, this library requires an accessible instance of [RabbitMQ](https://www.rabbitmq.com/) running somewhere either inside of a [Docker container](https://hub.docker.com/_/rabbitmq) or on another host.
 
+### Compatibility
+
+The library is only compatible with the following operating systems:
+
+- Linux
+- macOS 14 or later
+- iOS 17 and later
+- tvOS 17 and later
+- watchOS 10 and later
+
 ## Usage
 
 At the most basic, this library can be used as follows:

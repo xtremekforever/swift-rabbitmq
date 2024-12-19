@@ -6,10 +6,10 @@ import PackageDescription
 let package = Package(
     name: "swift-rabbitmq",
     platforms: [
-        .iOS(.v13),
+        .iOS(.v17),
         .macOS(.v14),
-        .tvOS(.v13),
-        .watchOS(.v6),
+        .tvOS(.v17),
+        .watchOS(.v10),
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
