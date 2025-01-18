@@ -7,11 +7,13 @@
     @testable import RabbitMq
 
     @Suite(.timeLimit(.minutes(1))) struct BasicConnectionTests {
+        private let logger = createTestLogger()
+
         func withBasicConnection(
             _ url: String = "amqp://localhost/%2F",
             body: @escaping @Sendable (BasicConnection) async throws -> Void
         ) async throws {
-            let connection = BasicConnection(url)
+            let connection = BasicConnection(url, logger: logger)
             try await connection.connect()
             try await body(connection)
             await connection.close()
@@ -58,7 +60,7 @@
 
         @Test
         func failsToConnectToInvalidHostname() async throws {
-            let connection = BasicConnection("amqp://aninvalidhostname/%2F")
+            let connection = BasicConnection("amqp://aninvalidhostname/%2F", logger: logger)
             await #expect(throws: NIOConnectionError.self) {
                 try await connection.connect()
             }
@@ -72,7 +74,7 @@
             "amqp://guest:invalid@localhost/%2F",
         ])
         func failsToConnectWithInvalidCredentials(url: String) async throws {
-            let connection = BasicConnection(url)
+            let connection = BasicConnection(url, logger: logger)
             await #expect(throws: AMQPConnectionError.self) {
                 try await connection.connect()
             }
@@ -81,7 +83,7 @@
 
         @Test
         func failsToConnectWithTls() async throws {
-            let connection = BasicConnection("amqps://localhost/%2F")
+            let connection = BasicConnection("amqps://localhost/%2F", logger: logger)
             await #expect(throws: NIOSSLError.self) {
                 try await connection.connect()
             }
