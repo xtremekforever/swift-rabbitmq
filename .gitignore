@@ -1,5 +1,6 @@
 # Swift
 .build*/
+default.profraw
 
 # Xcode
 *.plist
