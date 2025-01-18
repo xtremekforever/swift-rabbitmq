@@ -50,6 +50,12 @@ let package = Package(
             ],
             path: "Sources/Examples/ConsumePublishServices"
         ),
+        .testTarget(
+            name: "Tests",
+            dependencies: [
+                "RabbitMq"
+            ]
+        ),
     ]
 )
 
