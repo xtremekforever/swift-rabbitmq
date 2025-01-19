@@ -1,9 +1,10 @@
 import Logging
+import RabbitMq
 import Semaphore
 import Testcontainers
 
 actor RabbitMqTestContainer {
-    private let logger: Logger
+    let logger: Logger
 
     private var container: GenericContainer? = nil
     private let connectionSemaphore = AsyncSemaphore(value: 1)
@@ -36,4 +37,21 @@ actor RabbitMqTestContainer {
             _ = try await container.remove().get()
         }
     }
+}
+
+func startAndWaitForTestContainer(_ rabbitMqTestContainer: RabbitMqTestContainer) async throws {
+    let port = try await rabbitMqTestContainer.start()
+
+    // TODO: Remove this once we have wait strategies
+    let connection = BasicConnection("amqp://localhost:\(port)", logger: rabbitMqTestContainer.logger)
+    while !Task.isCancelled {
+        do {
+            try await connection.connect()
+        } catch {
+            try await Task.sleep(for: .seconds(1))
+            continue
+        }
+        break
+    }
+    await connection.close()
 }

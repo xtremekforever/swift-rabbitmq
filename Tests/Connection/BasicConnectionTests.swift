@@ -15,27 +15,15 @@ extension ConnectionTests {
             body: @escaping @Sendable (BasicConnection, String) async throws -> Void
         ) async throws {
             let port = await rabbitMqTestContainer.port
-
-            let connection = BasicConnection(url ?? "amqp://localhost:\(port)", logger: Self.logger)
-            while !Task.isCancelled {
-                do {
-                    try await connection.connect()
-                } catch {
-                    try await Task.sleep(for: .seconds(1))
-                    continue
-                }
-                break
-            }
+            let connection = BasicConnection(url ?? "amqp://localhost:\(port)", logger: logger)
+            try await connection.connect()
             try await body(connection, port)
             await connection.close()
         }
 
         @Test
         static func startRabbitMqTestContainer() async throws {
-            _ = try await Self.rabbitMqTestContainer.start()
-            // TODO: Remove this once we have wait strategies
-            try await withBasicConnection { connection, _ in
-            }
+            try await startAndWaitForTestContainer(rabbitMqTestContainer)
         }
 
         @Test
