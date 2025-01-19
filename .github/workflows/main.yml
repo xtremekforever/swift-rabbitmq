@@ -1,0 +1,25 @@
+name: Build & Test RabbitMq
+
+on:
+  push:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    name: Build Swift
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Swift Info
+      shell: bash
+      run: which swift && swift --version
+    - name: Resolve Packages
+      shell: bash
+      run: swift package resolve
+    - name: Build
+      shell: bash
+      run: swift build --build-tests 
+    - name: Run Tests
+      shell: bash
+      run: swift test
