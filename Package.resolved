@@ -1,5 +1,5 @@
 {
-  "originHash" : "4ab5e9910de893fa43f22bef2a3208e076575100a4458fcb5b635446bab5ff28",
+  "originHash" : "eb4550a3dc528f07bb3c6dfe771a0ebace92c2695c8db5c86cd90b1721d34f31",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -175,10 +175,10 @@
     {
       "identity" : "testcontainers-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/cristianpalomino/testcontainers-swift.git",
+      "location" : "https://github.com/xtremekforever/testcontainers-swift.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "c7bea309d7fc92b54e9a7df36f7da1134c85fb0b"
+        "branch" : "feature/sendable-conformance",
+        "revision" : "568e5df61a7d09ddce0f968a306b2a19801799cb"
       }
     }
   ],

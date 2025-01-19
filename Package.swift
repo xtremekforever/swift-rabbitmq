@@ -24,7 +24,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log", from: "1.0.0"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
         .package(url: "https://github.com/groue/Semaphore.git", from: "0.1.0"),
-        .package(url: "https://github.com/cristianpalomino/testcontainers-swift.git", branch: "main"),
+        .package(
+            url: "https://github.com/xtremekforever/testcontainers-swift.git", branch: "feature/sendable-conformance"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.

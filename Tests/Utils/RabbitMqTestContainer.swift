@@ -31,6 +31,9 @@ actor RabbitMqTestContainer {
     }
 
     func stop() async throws {
-        _ = try await container?.remove().get()
+        if let container {
+            logger.debug("Stopping RabbitMq container...")
+            _ = try await container.remove().get()
+        }
     }
 }
