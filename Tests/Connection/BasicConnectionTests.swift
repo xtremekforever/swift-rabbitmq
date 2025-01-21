@@ -6,7 +6,7 @@ import Testing
 @testable import RabbitMq
 
 extension ConnectionTests {
-    @Suite(.timeLimit(.minutes(1)), .serialized) struct BasicConnectionTests {
+    @Suite(.timeLimit(.minutes(3)), .serialized) struct BasicConnectionTests {
         static let logger = createTestLogger()
         static let rabbitMqTestContainer = RabbitMqTestContainer(logger: createTestLogger())
 

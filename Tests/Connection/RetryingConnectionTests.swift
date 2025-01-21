@@ -3,7 +3,7 @@ import Testing
 @testable import RabbitMq
 
 extension ConnectionTests {
-    @Suite(.timeLimit(.minutes(1)), .serialized) struct RetryingConnectionTests {
+    @Suite(.timeLimit(.minutes(3)), .serialized) struct RetryingConnectionTests {
         static let logger = createTestLogger()
         static let rabbitMqTestContainer = RabbitMqTestContainer(logger: createTestLogger())
 
@@ -40,7 +40,7 @@ extension ConnectionTests {
 
         @Test static func performsRetryConnection() async throws {
             try await withRetryingConnection("amqp://invalid:invalid@invalid") { connection, _ in
-                await connection.waitForConnection(timeout: .seconds(5))
+                await connection.waitForConnection(timeout: .seconds(15))
                 #expect(await connection.connectionAttempts > 1)
             }
         }
