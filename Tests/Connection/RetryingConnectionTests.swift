@@ -3,15 +3,15 @@ import Testing
 @testable import RabbitMq
 
 extension ConnectionTests {
-    @Suite(.timeLimit(.minutes(3)), .serialized) struct RetryingConnectionTests {
-        static let logger = createTestLogger()
-        static let rabbitMqTestContainer = RabbitMqTestContainer(logger: createTestLogger())
+    @Suite(.timeLimit(.minutes(1)))
+    struct RetryingConnectionTests {
+        let logger = createTestLogger()
 
-        static func withRetryingConnection(
+        func withRetryingConnection(
             _ url: String? = nil,
             body: @escaping @Sendable (RetryingConnection, String) async throws -> Void
         ) async throws {
-            let port = await rabbitMqTestContainer.port
+            let port = "5672"
 
             let connection = RetryingConnection(
                 url ?? "amqp://localhost:\(port)", reconnectionInterval: .seconds(1), logger: logger
@@ -24,12 +24,7 @@ extension ConnectionTests {
         }
 
         @Test
-        static func startRabbitMqTestContainer() async throws {
-            try await startAndWaitForTestContainer(rabbitMqTestContainer)
-        }
-
-        @Test
-        static func connectsToBroker() async throws {
+        func connectsToBroker() async throws {
             try await withRetryingConnection { connection, _ in
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
@@ -38,7 +33,8 @@ extension ConnectionTests {
             }
         }
 
-        @Test static func performsRetryConnection() async throws {
+        @Test
+        func performsRetryConnection() async throws {
             try await withRetryingConnection("amqp://invalid:invalid@invalid") { connection, _ in
                 await connection.waitForConnection(timeout: .seconds(15))
                 #expect(await connection.connectionAttempts > 1)
@@ -46,7 +42,7 @@ extension ConnectionTests {
         }
 
         @Test
-        static func recofiguresConnection() async throws {
+        func recofiguresConnection() async throws {
             // Connect using first URL
             try await withRetryingConnection { connection, port in
                 await connection.waitForConnection(timeout: .seconds(5))
@@ -64,11 +60,6 @@ extension ConnectionTests {
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
             }
-        }
-
-        @Test
-        static func stopRabbitMqTestContainer() async throws {
-            try await rabbitMqTestContainer.stop()
         }
     }
 }

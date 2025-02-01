@@ -9,6 +9,8 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
+    env:
+        RABBITMQ_DOCKER_COMPOSE: Docker/rabbitmq.docker-compose.yml
     steps:
     - uses: actions/checkout@v4
     - name: Swift Info
@@ -19,7 +21,13 @@ jobs:
       run: swift package resolve
     - name: Build
       shell: bash
-      run: swift build --build-tests 
+      run: swift build --build-tests
+    - name: Start RabbitMQ
+      shell: bash
+      run: docker compose -f ${{ env.RABBITMQ_DOCKER_COMPOSE }} up --wait
     - name: Run Tests
       shell: bash
       run: .build/debug/swift-rabbitmqPackageTests.xctest --testing-library swift-testing
+    - name: Stop RabbitMQ
+      shell: bash
+      run: docker compose -f ${{ env.RABBITMQ_DOCKER_COMPOSE }} down

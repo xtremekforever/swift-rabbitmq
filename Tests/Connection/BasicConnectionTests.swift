@@ -6,15 +6,15 @@ import Testing
 @testable import RabbitMq
 
 extension ConnectionTests {
-    @Suite(.timeLimit(.minutes(3)), .serialized) struct BasicConnectionTests {
-        static let logger = createTestLogger()
-        static let rabbitMqTestContainer = RabbitMqTestContainer(logger: createTestLogger())
+    @Suite(.timeLimit(.minutes(1)))
+    struct BasicConnectionTests {
+        let logger = createTestLogger()
 
-        static func withBasicConnection(
+        func withBasicConnection(
             _ url: String? = nil,
             body: @escaping @Sendable (BasicConnection, String) async throws -> Void
         ) async throws {
-            let port = await rabbitMqTestContainer.port
+            let port = "5672"
             let connection = BasicConnection(url ?? "amqp://localhost:\(port)", logger: logger)
             try await connection.connect()
             try await body(connection, port)
@@ -22,18 +22,14 @@ extension ConnectionTests {
         }
 
         @Test
-        static func startRabbitMqTestContainer() async throws {
-            try await startAndWaitForTestContainer(rabbitMqTestContainer)
-        }
-
-        @Test
-        static func connectsToBroker() async throws {
+        func connectsToBroker() async throws {
             try await withBasicConnection { connection, _ in
                 #expect(await connection.isConnected)
             }
         }
 
-        @Test static func repeatedCalls() async throws {
+        @Test
+        func repeatedCalls() async throws {
             // This will connect, getChannel, and close twice
             try await withBasicConnection { connection, _ in
                 var channel = try await connection.getChannel()
@@ -48,7 +44,7 @@ extension ConnectionTests {
         }
 
         @Test
-        static func recofiguresConnection() async throws {
+        func recofiguresConnection() async throws {
             // Connect using first URL
             try await withBasicConnection { connection, port in
                 #expect(await connection.isConnected)
@@ -66,7 +62,7 @@ extension ConnectionTests {
         }
 
         @Test
-        static func failsToConnectToInvalidHostname() async throws {
+        func failsToConnectToInvalidHostname() async throws {
             let connection = BasicConnection("amqp://aninvalidhostname/%2F", logger: logger)
             await #expect(throws: NIOConnectionError.self) {
                 try await connection.connect()
@@ -79,10 +75,9 @@ extension ConnectionTests {
         @Test(arguments: [
             ("guest", "invalid"), ("invalid", "guest"),
         ])
-        static func failsToConnectWithInvalidCredentials(username: String, password: String) async throws {
-            let port = await rabbitMqTestContainer.port
+        func failsToConnectWithInvalidCredentials(username: String, password: String) async throws {
             let connection = BasicConnection(
-                "amqp://\(username):\(password)@localhost:\(port)/%2F", logger: Self.logger
+                "amqp://\(username):\(password)@localhost:5672/%2F", logger: logger
             )
             await #expect(throws: AMQPConnectionError.self) {
                 try await connection.connect()
@@ -91,18 +86,12 @@ extension ConnectionTests {
         }
 
         @Test
-        static func failsToConnectWithTls() async throws {
-            let port = await rabbitMqTestContainer.port
-            let connection = BasicConnection("amqps://localhost:\(port)/%2F", logger: logger)
+        func failsToConnectWithTls() async throws {
+            let connection = BasicConnection("amqps://localhost:5672/%2F", logger: logger)
             await #expect(throws: NIOSSLError.self) {
                 try await connection.connect()
             }
             #expect(await !connection.isConnected)
-        }
-
-        @Test
-        static func stopRabbitMqTestContainer() async throws {
-            try await rabbitMqTestContainer.stop()
         }
     }
 }
