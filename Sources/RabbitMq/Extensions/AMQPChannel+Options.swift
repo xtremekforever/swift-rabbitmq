@@ -77,7 +77,7 @@ extension AMQPChannel {
         return try await basicConsume(
             queue: queueName,
             consumerTag: consumerOptions.consumerTag,
-            noAck: consumerOptions.noAck,
+            noAck: consumerOptions.autoAck,
             exclusive: consumerOptions.exclusive,
             args: consumerOptions.args
         )
