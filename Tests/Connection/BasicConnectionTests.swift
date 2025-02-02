@@ -10,20 +10,9 @@ extension ConnectionTests {
     struct BasicConnectionTests {
         let logger = createTestLogger()
 
-        func withBasicConnection(
-            _ url: String? = nil,
-            body: @escaping @Sendable (BasicConnection, String) async throws -> Void
-        ) async throws {
-            let port = "5672"
-            let connection = BasicConnection(url ?? "amqp://localhost:\(port)", logger: logger)
-            try await connection.connect()
-            try await body(connection, port)
-            await connection.close()
-        }
-
         @Test
         func connectsToBroker() async throws {
-            try await withBasicConnection { connection, _ in
+            try await withBasicConnection(logger: logger) { connection in
                 #expect(await connection.isConnected)
             }
         }
@@ -31,7 +20,7 @@ extension ConnectionTests {
         @Test
         func repeatedCalls() async throws {
             // This will connect, getChannel, and close twice
-            try await withBasicConnection { connection, _ in
+            try await withBasicConnection(logger: logger) { connection in
                 var channel = try await connection.getChannel()
                 #expect(channel != nil)
 
@@ -46,11 +35,11 @@ extension ConnectionTests {
         @Test
         func recofiguresConnection() async throws {
             // Connect using first URL
-            try await withBasicConnection { connection, port in
+            try await withBasicConnection(logger: logger) { connection in
                 #expect(await connection.isConnected)
 
                 // Now reconfigure, make sure we disconnect
-                let newUrl = "amqp://guest:guest@localhost:\(port)/%2F"
+                let newUrl = "amqp://guest:guest@localhost:5672/%2F"
                 await connection.reconfigure(with: newUrl)
                 #expect(await !connection.isConnected)
                 #expect(await connection.configuredUrl == newUrl)
