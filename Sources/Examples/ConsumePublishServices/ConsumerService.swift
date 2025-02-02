@@ -31,8 +31,7 @@ struct ConsumerService: Service {
 
     func run() async throws {
         let consumer = Consumer(
-            rabbitMqConnection, "ConsumerServiceQueue", "ServiceExampleContract",
-            consumerOptions: .init(noAck: true)
+            rabbitMqConnection, "ConsumerServiceQueue", "ServiceExampleContract"
         )
 
         let events = try await consumer.retryingConsume(retryInterval: .seconds(15))
