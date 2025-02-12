@@ -1,6 +1,12 @@
 import NIOCore
 import NIOSSL
 
+/// Default timeout for a RabbitMQ connection to succeed.
+///
+/// The default in the base `rabbitmq-nio` library is also 60 seconds, but we define this
+/// as a `Duration` instead of a `TimeAmount`.
+public let defaultConnectionTimeout = Duration.seconds(60)
+
 /// Definition of configuration that can be provided for a RabbitMQ connection.
 public struct ConnectionConfiguration: Sendable {
     /// If `nil` is passed, no TLS configuration will be used for the connection.
@@ -25,7 +31,7 @@ public struct ConnectionConfiguration: Sendable {
     ///   - connectionName: Specify a name to use for this connection. Defaults to `nil`.
     public init(
         tls: TLSConfiguration? = nil,
-        timeout: Duration = DefaultConnectionTimeout,
+        timeout: Duration = defaultConnectionTimeout,
         connectionName: String? = nil
     ) {
         self.tls = tls

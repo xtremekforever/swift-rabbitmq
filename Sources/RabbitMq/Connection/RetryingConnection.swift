@@ -19,7 +19,8 @@ import ServiceLifecycle
 /// can also be used to run the connection with full graceful shutdown support.
 public actor RetryingConnection: Connection, Service {
     private let basicConnection: BasicConnection
-    private var reconnectionInterval: Duration
+    private(set) var reconnectionInterval: Duration
+    private(set) var connectionAttempts: Int = 0
 
     // Protocol conformances
     public let logger: Logger  // shared to users of Connection
@@ -46,7 +47,7 @@ public actor RetryingConnection: Connection, Service {
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         reconnectionInterval: Duration = .seconds(30),
         logger: Logger = Logger(label: "\(RetryingConnection.self)"),
-        connectionPollingInterval: Duration = DefaultConnectionPollingInterval
+        connectionPollingInterval: Duration = defaultConnectionPollingInterval
     ) {
         assert(connectionPollingInterval > .seconds(0))
 
@@ -112,12 +113,14 @@ public actor RetryingConnection: Connection, Service {
             // Attempt to connect, set last attempt on failure
             do {
                 try await basicConnection.connect()
+                connectionAttempts = 0
                 lastConnectionAttempt = nil
             } catch {
                 let url = await configuredUrl
                 logger.error("Unable to connect to broker at \(url): \(error)")
                 lastConnectionAttempt = ContinuousClock().now
             }
+            connectionAttempts += 1
         }
 
         // Close connection at the end

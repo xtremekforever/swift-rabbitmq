@@ -54,7 +54,7 @@ public actor BasicConnection: Connection {
         configuration: ConnectionConfiguration = .init(),
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         logger: Logger = Logger(label: String(describing: BasicConnection.self)),
-        connectionPollingInterval: Duration = DefaultConnectionPollingInterval
+        connectionPollingInterval: Duration = defaultConnectionPollingInterval
     ) {
         assert(connectionPollingInterval > .milliseconds(0))
 

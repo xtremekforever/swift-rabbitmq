@@ -81,7 +81,7 @@ public struct Publisher: Sendable {
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: `AMQPResponse.Channel.Basic.Published` if the message was published.
     @discardableResult public func retryingPublish(
-        _ data: ByteBuffer, routingKey: String = "", retryInterval: Duration = .seconds(30)
+        _ data: ByteBuffer, routingKey: String = "", retryInterval: Duration = defaultRetryInterval
     ) async throws -> AMQPResponse.Channel.Basic.Published? {
         return try await RetryingPublisher(connection, configuration, retryInterval).publish(
             data, routingKey: routingKey
@@ -102,7 +102,7 @@ public struct Publisher: Sendable {
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: `AMQPResponse.Channel.Basic.Published` if the message was published.
     @discardableResult public func retryingPublish(
-        _ data: String, routingKey: String = "", retryInterval: Duration = .seconds(30)
+        _ data: String, routingKey: String = "", retryInterval: Duration = defaultRetryInterval
     ) async throws -> AMQPResponse.Channel.Basic.Published? {
         return try await retryingPublish(ByteBuffer(string: data), routingKey: routingKey, retryInterval: retryInterval)
     }

@@ -27,8 +27,7 @@ struct RetryingConsumer: Sendable {
     func run() async throws {
         try await withThrowingDiscardingTaskGroup { group in
             group.addTask {
-                try await self.performRetryingConsume()
-                self.cancellationChannel.finish()
+                try await performRetryingConsume()
             }
 
             await cancellationChannel.waitUntilFinished()
@@ -38,61 +37,35 @@ struct RetryingConsumer: Sendable {
         }
     }
 
-    private func performRetry(_ retryInterval: Duration) async throws {
-        logger.debug("Will retry consuming on queue \(configuration.queueName) in \(retryInterval)")
-        try await Task.sleep(for: retryInterval)
+    private func performRetryingConsume() async throws {
+        try await withRetryingConnectionBody(
+            connection, operationName: "consuming from queue \(configuration.queueName)",
+            retryInterval: retryInterval
+        ) {
+            let consumeStream = try await performConsume()
+
+            // Consume sequence and add to AsyncChannel
+            for try await message in consumeStream {
+                logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
+                await consumeChannel.send(message)
+            }
+
+            // Consumer completed, exit if the Task is cancelled
+            logger.debug("Consumer for queue \(configuration.queueName) completed...")
+        }
+
+        // Finish channels on exit
+        consumeChannel.finish()
+        cancellationChannel.finish()
     }
 
     private func performConsume() async throws -> AMQPSequence<AMQPResponse.Channel.Message.Delivery> {
         // This will let the `consume()` method know that we either are consuming or failed
         // Either way we want it to return
-        defer {
-            consumerWaitChannel.finish()
-        }
+        defer { consumerWaitChannel.finish() }
 
         // Start consuming
         return try await connection.performConsume(configuration)
-    }
-
-    private func performRetryingConsume() async throws {
-        var firstAttempt = true
-
-        while !Task.isCancelledOrShuttingDown {
-            do {
-                let consumeStream = try await performConsume()
-
-                // Consume sequence and add to AsyncChannel
-                for try await message in consumeStream {
-                    logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
-                    await consumeChannel.send(message)
-                }
-
-                // Consumer completed, exit if the Task is cancelled
-                logger.debug("Consumer for queue \(configuration.queueName) completed...")
-                if Task.isCancelledOrShuttingDown {
-                    break
-                }
-
-                // Consume retry
-                try await performRetry(retryInterval)
-            } catch AMQPConnectionError.connectionClosed(let replyCode, let replyText) {
-                if !firstAttempt {
-                    let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
-                    logger.error("Connection closed while consuming from queue \(configuration.queueName): \(error)")
-                }
-
-                // Wait for connection, timeout after retryInterval
-                await connection.waitForConnection(timeout: retryInterval)
-
-                firstAttempt = false
-            } catch {
-                logger.error("Error consuming from queue \(configuration.queueName): \(error)")
-
-                // Consume retry
-                try await performRetry(retryInterval)
-            }
-        }
-        consumeChannel.finish()
     }
 
     private func runAndWait() async {
