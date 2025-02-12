@@ -1,6 +1,11 @@
 import AMQPClient
 import Logging
 
+/// Default retry interval for retrying an operation on a `Connection`.
+///
+/// This is used by the retrying publisher and consumer as the default retry interval.
+public let defaultRetryInterval = Duration.seconds(30)
+
 /// Perform retry functionality with a given `Connection`.
 ///
 /// This helper function can be used publicly to implement retry functionality on a body
@@ -19,7 +24,7 @@ import Logging
 @discardableResult public func withRetryingConnectionBody<T: Sendable>(
     _ connection: Connection,
     operationName: String,
-    retryInterval: Duration = DefaultRetryInterval,
+    retryInterval: Duration = defaultRetryInterval,
     body: @escaping @Sendable () async throws -> T?
 ) async throws -> T? {
     var firstAttempt = true

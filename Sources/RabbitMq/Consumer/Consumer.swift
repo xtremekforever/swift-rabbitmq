@@ -99,7 +99,7 @@ public struct Consumer: Sendable {
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: a `ConsumerChannel` of type `String` that returns each consumed message.
     public func retryingConsume(
-        retryInterval: Duration = DefaultRetryInterval
+        retryInterval: Duration = defaultRetryInterval
     ) async throws -> ConsumerChannel<String> {
         return try await RetryingConsumer(
             connection, configuration, retryInterval
@@ -117,7 +117,7 @@ public struct Consumer: Sendable {
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: a `ConsumerChannel` of type `ByteBuffer` that returns each consumed message.
     public func retryingConsumeBuffer(
-        retryInterval: Duration = DefaultRetryInterval
+        retryInterval: Duration = defaultRetryInterval
     ) async throws -> ConsumerChannel<ByteBuffer> {
         return try await RetryingConsumer(
             connection, configuration, retryInterval
@@ -135,7 +135,7 @@ public struct Consumer: Sendable {
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: a `ConsumerChannel` of type `AMQPResponse.Channel.Message.Delivery` that returns each consumed message.
     public func retryingConsumeDelivery(
-        retryInterval: Duration = DefaultRetryInterval
+        retryInterval: Duration = defaultRetryInterval
     ) async throws -> ConsumerChannel<AMQPResponse.Channel.Message.Delivery> {
         return try await RetryingConsumer(
             connection, configuration, retryInterval

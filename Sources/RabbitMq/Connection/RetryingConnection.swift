@@ -19,8 +19,8 @@ import ServiceLifecycle
 /// can also be used to run the connection with full graceful shutdown support.
 public actor RetryingConnection: Connection, Service {
     private let basicConnection: BasicConnection
-    var reconnectionInterval: Duration
-    var connectionAttempts: Int = 0
+    private(set) var reconnectionInterval: Duration
+    private(set) var connectionAttempts: Int = 0
 
     // Protocol conformances
     public let logger: Logger  // shared to users of Connection
@@ -47,7 +47,7 @@ public actor RetryingConnection: Connection, Service {
         eventLoop: EventLoop = MultiThreadedEventLoopGroup.singleton.next(),
         reconnectionInterval: Duration = .seconds(30),
         logger: Logger = Logger(label: "\(RetryingConnection.self)"),
-        connectionPollingInterval: Duration = DefaultConnectionPollingInterval
+        connectionPollingInterval: Duration = defaultConnectionPollingInterval
     ) {
         assert(connectionPollingInterval > .seconds(0))
 
