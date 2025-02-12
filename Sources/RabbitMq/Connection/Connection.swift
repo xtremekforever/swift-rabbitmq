@@ -14,6 +14,9 @@ public let DefaultConnectionTimeout = Duration.seconds(60)
 /// but can be customized per-connection to increase responsiveness or reduce CPU usage.
 public let DefaultConnectionPollingInterval = Duration.milliseconds(250)
 
+/// Default retry interval used for retrying Publisher and Consumer.
+public let DefaultRetryInterval = Duration.seconds(30)
+
 /// Abstraction for a high-level connection to RabbitMQ.
 ///
 /// This protocol is used by the `Consumer` and `Publisher` to be able to get a channel

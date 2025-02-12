@@ -98,7 +98,9 @@ public struct Consumer: Sendable {
     /// - Throws: `AMQPConnectionError.connectionClosed` if the connection to the broker is not open,
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: a `ConsumerChannel` of type `String` that returns each consumed message.
-    public func retryingConsume(retryInterval: Duration = .seconds(30)) async throws -> ConsumerChannel<String> {
+    public func retryingConsume(
+        retryInterval: Duration = DefaultRetryInterval
+    ) async throws -> ConsumerChannel<String> {
         return try await RetryingConsumer(
             connection, configuration, retryInterval
         ).consumeString()
@@ -115,7 +117,7 @@ public struct Consumer: Sendable {
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: a `ConsumerChannel` of type `ByteBuffer` that returns each consumed message.
     public func retryingConsumeBuffer(
-        retryInterval: Duration = .seconds(30)
+        retryInterval: Duration = DefaultRetryInterval
     ) async throws -> ConsumerChannel<ByteBuffer> {
         return try await RetryingConsumer(
             connection, configuration, retryInterval
@@ -133,7 +135,7 @@ public struct Consumer: Sendable {
     ///         or an `NIO` or `AMQPClient` error.
     /// - Returns: a `ConsumerChannel` of type `AMQPResponse.Channel.Message.Delivery` that returns each consumed message.
     public func retryingConsumeDelivery(
-        retryInterval: Duration = .seconds(30)
+        retryInterval: Duration = DefaultRetryInterval
     ) async throws -> ConsumerChannel<AMQPResponse.Channel.Message.Delivery> {
         return try await RetryingConsumer(
             connection, configuration, retryInterval
