@@ -36,7 +36,7 @@ public let defaultRetryInterval = Duration.seconds(30)
     while !Task.isCancelledOrShuttingDown {
         do {
             connection.logger.trace("Starting body for operation \"\(operationName)\"...")
-            if let result = try await body() {
+            if let result = try await body(), !(result is Void) {
                 return result
             }
         } catch AMQPConnectionError.connectionClosed(let replyCode, let replyText) {
@@ -64,13 +64,10 @@ public let defaultRetryInterval = Duration.seconds(30)
         }
 
         // Exit on cancellation or shutdown
-        if Task.isCancelledOrShuttingDown {
-            break
+        if !Task.isCancelledOrShuttingDown {
+            connection.logger.trace("Will retry operation \"\(operationName)\" in \(retryInterval)...")
+            try await Task.sleep(for: retryInterval)
         }
-
-        // Retry here
-        connection.logger.trace("Will retry operation \"\(operationName)\" in \(retryInterval)...")
-        try await Task.sleep(for: retryInterval)
     }
 
     return nil
