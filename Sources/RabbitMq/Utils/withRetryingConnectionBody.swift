@@ -16,7 +16,7 @@ import Logging
 ///   - body: Method body to run and retry. If the body returns a value, this method will also return a value.
 /// - Throws: `CancellationError` if cancelled while performing a retry sleep interval.
 /// - Returns: Value returned from the `body`, otherwise nil on cancellation or graceful shutdown.
-public func withRetryingConnectionBody<T: Sendable>(
+@discardableResult public func withRetryingConnectionBody<T: Sendable>(
     _ connection: Connection,
     operationName: String,
     retryInterval: Duration = DefaultRetryInterval,
