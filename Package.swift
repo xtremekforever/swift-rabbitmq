@@ -16,13 +16,17 @@ var targets: [Target] = [
     ),
     .executableTarget(
         name: "BasicConsumePublish",
-        dependencies: ["RabbitMq"],
+        dependencies: [
+            "RabbitMq",
+            .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        ],
         path: "Sources/Examples/BasicConsumePublish"
     ),
     .executableTarget(
         name: "ConsumePublishServices",
         dependencies: [
-            "RabbitMq"
+            "RabbitMq",
+            .product(name: "ArgumentParser", package: "swift-argument-parser"),
         ],
         path: "Sources/Examples/ConsumePublishServices"
     ),
@@ -66,6 +70,7 @@ let package = Package(
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
         .package(url: "https://github.com/groue/Semaphore.git", from: "0.1.0"),
         .package(url: "https://github.com/xtremekforever/testcontainers-swift.git", branch: "main"),
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
     ],
     targets: targets
 )

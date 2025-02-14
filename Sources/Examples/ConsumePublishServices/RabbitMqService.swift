@@ -7,19 +7,22 @@ import ServiceLifecycle
 struct RabbitMqService: Service {
     private let connectionUrl: String
     private let logger: Logger
+    private let reconnectionInterval: Duration
     public let connection: RetryingConnection
 
     init(
         _ connectionUrl: String,
-        _ logger: Logger = Logger(label: String(describing: RabbitMqService.self))
+        _ logger: Logger = Logger(label: String(describing: RabbitMqService.self)),
+        reconnectionInterval: Duration = .seconds(15)
     ) {
         self.connectionUrl = connectionUrl
         self.logger = logger
+        self.reconnectionInterval = reconnectionInterval
 
         var tls = TLSConfiguration.makeClientConfiguration()
         tls.certificateVerification = .none
         connection = RetryingConnection(
-            connectionUrl, configuration: .init(tls: tls), reconnectionInterval: .seconds(15), logger: logger
+            connectionUrl, configuration: .init(tls: tls), reconnectionInterval: reconnectionInterval, logger: logger
         )
     }
 

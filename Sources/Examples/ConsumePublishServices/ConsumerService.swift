@@ -6,13 +6,16 @@ import ServiceLifecycle
 struct ConsumerService: Service {
     private let rabbitMqConnection: Connection
     private let logger: Logger
+    private let retryInterval: Duration
 
     init(
         _ rabbitMqConnection: Connection,
-        _ logger: Logger = Logger(label: "\(ConsumerService.self)")
+        _ logger: Logger = Logger(label: "\(ConsumerService.self)"),
+        retryInterval: Duration = .seconds(15)
     ) {
         self.rabbitMqConnection = rabbitMqConnection
         self.logger = logger
+        self.retryInterval = retryInterval
     }
 
     private func processMessage(_ message: String) {
@@ -34,7 +37,7 @@ struct ConsumerService: Service {
             rabbitMqConnection, "ConsumerServiceQueue", "ServiceExampleContract"
         )
 
-        let events = try await consumer.retryingConsume(retryInterval: .seconds(15))
+        let events = try await consumer.retryingConsume(retryInterval: retryInterval)
         for await message in events.cancelOnGracefulShutdown() {
             processMessage(message)
         }
