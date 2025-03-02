@@ -2,9 +2,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     command: rabbitmq-server
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASSWORD: guest
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     ports:
       - 5672:5672
       - 15672:15672
