@@ -5,7 +5,7 @@ import Testing
 extension ConnectionTests {
     @Suite(.timeLimit(.minutes(1)))
     struct RetryingConnectionTests {
-        let logger = createTestLogger()
+        let logger = createTestLogger(logLevel: .critical)
 
         func withRetryingConnection(
             _ url: String? = nil,
@@ -28,6 +28,7 @@ extension ConnectionTests {
             try await withRetryingConnection { connection, _ in
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
+                #expect(await connection.logger[metadataKey: "url"] != nil)
                 let channel = try await connection.getChannel()
                 #expect(channel != nil)
             }
@@ -47,6 +48,8 @@ extension ConnectionTests {
             try await withRetryingConnection { connection, port in
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
+                let origUrl = await connection.configuredUrl
+                try #expect(#require(await connection.logger[metadataKey: "url"]) == .string(origUrl))
 
                 // Now reconfigure, make sure we disconnect
                 let newUrl = "amqp://guest:guest@localhost:\(port)/%2F"
@@ -59,6 +62,7 @@ extension ConnectionTests {
                 // Wait for reconnection with new string
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
+                try #expect(#require(await connection.logger[metadataKey: "url"]) == .string(newUrl))
             }
         }
     }
