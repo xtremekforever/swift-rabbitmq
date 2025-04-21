@@ -40,7 +40,7 @@ struct BasicConsumePublish: AsyncParsableCommand {
 
             // Create consumer and start consuming
             group.addTask {
-                print("Starting test Consumer...")
+                logger.info("Starting test Consumer...")
                 let consumer = Consumer(
                     connection,
                     "MyTestQueue",
@@ -49,20 +49,20 @@ struct BasicConsumePublish: AsyncParsableCommand {
                     queueOptions: .init(autoDelete: true, durable: true)
                 )
                 for await message in try await consumer.consume() {
-                    print("Consumed message: \(message)")
+                    logger.info("Consumed message: \(message)")
                 }
             }
 
             // Create publisher and start publishing
             group.addTask {
-                print("Starting test Publisher...")
+                logger.info("Starting test Publisher...")
                 let publisher = Publisher(
                     connection,
                     "MyTestExchange",
                     exchangeOptions: exchangeOptions
                 )
                 while !Task.isCancelled {
-                    print("Publishing test message...")
+                    logger.info("Publishing test message...")
                     try await publisher.publish("A message")
 
                     try await Task.sleep(for: .milliseconds(publishInterval))
@@ -70,7 +70,7 @@ struct BasicConsumePublish: AsyncParsableCommand {
             }
         }
 
-        print("Done!")
+        logger.info("Done!")
 
         // Cleanup
         await connection.close()
