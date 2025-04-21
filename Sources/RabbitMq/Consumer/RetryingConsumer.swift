@@ -3,15 +3,20 @@ import AsyncAlgorithms
 import Logging
 import NIOCore
 
-struct RetryingConsumer: Sendable {
+struct RetryingConsumer: ConnectionLoggable {
     let connection: Connection
     let configuration: ConsumerConfiguration
-    let logger: Logger
 
     let retryInterval: Duration
     let consumerWaitChannel = AsyncChannel<Void>()
     let consumeChannel = AsyncChannel<AMQPResponse.Channel.Message.Delivery>()
     let cancellationChannel = AsyncChannel<Void>()
+
+    var logger: Logger {
+        get async {
+            await connection.logger.withMetadata(["queueName": .string(configuration.queueName)])
+        }
+    }
 
     init(
         _ connection: Connection,
@@ -20,7 +25,6 @@ struct RetryingConsumer: Sendable {
     ) {
         self.connection = connection
         self.configuration = configuration
-        self.logger = connection.logger
         self.retryInterval = retryInterval
     }
 
@@ -31,7 +35,7 @@ struct RetryingConsumer: Sendable {
             }
 
             await cancellationChannel.waitUntilFinished()
-            logger.debug("Received cancellation for consumer on queue \(configuration.queueName)")
+            await logger.debug("Received cancellation for consumer")
 
             group.cancelAll()
         }
@@ -39,19 +43,20 @@ struct RetryingConsumer: Sendable {
 
     private func performRetryingConsume() async throws {
         try await withRetryingConnectionBody(
-            connection, operationName: "consuming from queue \(configuration.queueName)",
+            connection, operationName: "consuming from queue",
+            metadata: ["queueName": .string(configuration.queueName)],
             retryInterval: retryInterval
         ) {
             let consumeStream = try await performConsume()
 
             // Consume sequence and add to AsyncChannel
             for try await message in consumeStream {
-                logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
+                await logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
                 await consumeChannel.send(message)
             }
 
             // Consumer completed, exit if the Task is cancelled
-            logger.debug("Consumer for queue \(configuration.queueName) completed...")
+            await logger.debug("Consumer completed...")
         }
 
         // Finish channels on exit

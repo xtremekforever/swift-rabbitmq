@@ -21,7 +21,7 @@ public actor BasicConnection: Connection {
     private let eventLoop: EventLoop
 
     // Protocol conformances
-    public let logger: Logger  // shared to users of Connection
+    public var logger: Logger  // shared to users of Connection
     public let connectionPollingInterval: Duration
     public var configuredUrl: String {
         return url
@@ -61,7 +61,7 @@ public actor BasicConnection: Connection {
         self.url = url
         self.configuration = configuration
         self.eventLoop = eventLoop
-        self.logger = logger
+        self.logger = logger.withMetadata(["url": .string(url)])
         self.connectionPollingInterval = connectionPollingInterval
     }
 
@@ -82,7 +82,7 @@ public actor BasicConnection: Connection {
         defer { connecting = false }
 
         // Actually connect
-        logger.info("Connecting to broker at \(url)")
+        logger.info("Connecting to broker")
         connection = try await AMQPConnection.connect(
             use: eventLoop,
             from: AMQPConnectionConfiguration(
@@ -91,7 +91,7 @@ public actor BasicConnection: Connection {
                 connectionName: configuration.connectionName ?? logger.label
             )
         )
-        logger.info("Connected to broker at \(url)")
+        logger.info("Connected to broker")
     }
 
     /// Reconfigure this connection to RabbitMQ.
@@ -110,7 +110,7 @@ public actor BasicConnection: Connection {
 
         // If the URL changes
         if url != self.url {
-            logger.debug("Received call to reconfigure connection from \(self.url) -> \(url)")
+            logger.debug("Reconfiguring connection", metadata: ["newUrl": .string(url)])
 
             // While this flag is true, connect() will not be allowed to connect
             reconfiguring = true
@@ -119,9 +119,12 @@ public actor BasicConnection: Connection {
             await close()
         }
 
-        // Update configuration before closing connection
+        // Update configuration
         self.url = url
         self.configuration = configuration
+
+        // Update logger metadata to reflect new URL
+        self.logger[metadataKey: "url"] = .string(url)
     }
 
     /// Open or get a channel instance for the current connection.
@@ -160,7 +163,7 @@ public actor BasicConnection: Connection {
             return
         }
 
-        logger.info("Closing connection to \(url)")
+        logger.info("Closing connection")
         try? await connection?.close()
         try? await channel?.close()
     }

@@ -8,12 +8,13 @@ import Testing
 extension ConnectionTests {
     @Suite(.timeLimit(.minutes(1)))
     struct BasicConnectionTests {
-        let logger = createTestLogger()
+        let logger = createTestLogger(logLevel: .critical)
 
         @Test
         func connectsToBroker() async throws {
             try await withBasicConnection(logger: logger) { connection in
                 #expect(await connection.isConnected)
+                #expect(await connection.logger[metadataKey: "url"] != nil)
             }
         }
 
@@ -37,12 +38,15 @@ extension ConnectionTests {
             // Connect using first URL
             try await withBasicConnection(logger: logger) { connection in
                 #expect(await connection.isConnected)
+                let origUrl = await connection.configuredUrl
+                try #expect(#require(await connection.logger[metadataKey: "url"]) == .string(origUrl))
 
                 // Now reconfigure, make sure we disconnect
                 let newUrl = "amqp://guest:guest@localhost:5672/%2F"
                 await connection.reconfigure(with: newUrl)
                 #expect(await !connection.isConnected)
                 #expect(await connection.configuredUrl == newUrl)
+                try #expect(#require(await connection.logger[metadataKey: "url"]) == .string(newUrl))
 
                 // Connect with new string
                 try await connection.connect()

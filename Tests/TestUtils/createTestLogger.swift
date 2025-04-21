@@ -6,7 +6,7 @@ public func createTestLogger(logLevel: Logger.Level? = nil, fileID: String = #fi
         logger.logLevel = logLevel
         return logger
     } else {
-        let logger = Logger(label: "", factory: { _ in NullLogHandler() })
+        let logger = Logger(label: "", factory: { _ in SwiftLogNoOpLogHandler() })
         return logger
     }
 }
