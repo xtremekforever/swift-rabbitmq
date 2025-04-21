@@ -15,7 +15,7 @@ extension AMQPChannel {
 
         logger.trace(
             "Declaring exchange...",
-            metadata: ["name": .string(exchangeName), "options": .string("\(exchangeOptions)")]
+            metadata: ["exchangeName": .string(exchangeName), "options": .string("\(exchangeOptions)")]
         )
         try await exchangeDeclare(
             name: exchangeName,
@@ -40,7 +40,7 @@ extension AMQPChannel {
 
         logger.trace(
             "Declaring queue...",
-            metadata: ["name": .string(queueName), "options": .string("\(queueOptions)")]
+            metadata: ["queueName": .string(queueName), "options": .string("\(queueOptions)")]
         )
         try await queueDeclare(
             name: queueName,
@@ -85,7 +85,7 @@ extension AMQPChannel {
         _ consumerOptions: ConsumerOptions,
         _ logger: Logger
     ) async throws -> AMQPSequence<AMQPClient.AMQPResponse.Channel.Message.Delivery> {
-        logger.trace("Consuming messages from queue...", metadata: ["name": .string(queueName)])
+        logger.trace("Consuming messages from queue...", metadata: ["queueName": .string(queueName)])
         return try await basicConsume(
             queue: queueName,
             consumerTag: consumerOptions.consumerTag,
@@ -102,7 +102,7 @@ extension AMQPChannel {
         _ publisherOptions: PublisherOptions,
         _ logger: Logger
     ) async throws -> AMQPResponse.Channel.Basic.Published {
-        logger.trace("Publishing message to exchange...", metadata: ["name": .string(exchangeName)])
+        logger.trace("Publishing message to exchange...", metadata: ["exchangeName": .string(exchangeName)])
         return try await basicPublish(
             from: data,
             exchange: exchangeName,
