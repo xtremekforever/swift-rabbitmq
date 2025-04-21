@@ -23,8 +23,10 @@ public actor RetryingConnection: Connection, Service {
     private(set) var connectionAttempts: Int = 0
 
     // Protocol conformances
-    public let logger: Logger  // shared to users of Connection
     public let connectionPollingInterval: Duration
+    public var logger: Logger {
+        get async { await basicConnection.logger }
+    }
     public var configuredUrl: String {
         get async { await basicConnection.configuredUrl }
     }
@@ -53,7 +55,6 @@ public actor RetryingConnection: Connection, Service {
 
         self.basicConnection = BasicConnection(url, configuration: configuration, eventLoop: eventLoop, logger: logger)
         self.reconnectionInterval = reconnectionInterval
-        self.logger = logger
         self.connectionPollingInterval = connectionPollingInterval
     }
 
@@ -72,8 +73,13 @@ public actor RetryingConnection: Connection, Service {
         // Update reconnection interval, this will apply on the next reconnection
         if let reconnectionInterval {
             if reconnectionInterval != self.reconnectionInterval {
-                logger.debug(
-                    "Changing reconnection interval from \(self.reconnectionInterval) -> \(reconnectionInterval)")
+                await logger.debug(
+                    "Changing reconnection interval",
+                    metadata: [
+                        "currentInterval": .stringConvertible(self.reconnectionInterval),
+                        "newInterval": .stringConvertible(reconnectionInterval),
+                    ]
+                )
                 self.reconnectionInterval = reconnectionInterval
             }
         }
@@ -116,8 +122,7 @@ public actor RetryingConnection: Connection, Service {
                 connectionAttempts = 0
                 lastConnectionAttempt = nil
             } catch {
-                let url = await configuredUrl
-                logger.error("Unable to connect to broker at \(url): \(error)")
+                await logger.error("Unable to connect to broker", metadata: ["error": .string("\(error)")])
                 lastConnectionAttempt = ContinuousClock().now
             }
             connectionAttempts += 1

@@ -16,10 +16,15 @@ import NIO
 ///     print(message)
 /// }
 /// ```
-public struct Consumer: Sendable {
+public struct Consumer: ConnectionLoggable {
     let connection: Connection
     let configuration: ConsumerConfiguration
-    let logger: Logger
+
+    var logger: Logger {
+        get async {
+            await connection.logger.withMetadata(["queueName": .string(configuration.queueName)])
+        }
+    }
 
     /// Create the consumer. If the default parameters are used, this consumes on the default queue on the broker.
     ///
@@ -52,7 +57,6 @@ public struct Consumer: Sendable {
             bindingOptions: bindingOptions,
             consumerOptions: consumerOptions
         )
-        self.logger = connection.logger
     }
 
     /// Start consuming strings from the consumer (no retries).
@@ -63,7 +67,12 @@ public struct Consumer: Sendable {
     public func consume() async throws -> AnyAsyncSequence<String> {
         // We starting consuming before wrapping the stream below
         let consumeStream = try await connection.performConsume(configuration)
-        return .init(consumeStream.compactMap { String(buffer: $0.body) })
+        return .init(
+            consumeStream.compactMap { message in
+                await logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
+                return String(buffer: message.body)
+            }
+        )
     }
 
     /// Start consuming from the consumer (no retries).
@@ -74,7 +83,12 @@ public struct Consumer: Sendable {
     public func consumeBuffer() async throws -> AnyAsyncSequence<ByteBuffer> {
         // We starting consuming before wrapping the stream below
         let consumeStream = try await connection.performConsume(configuration)
-        return .init(consumeStream.compactMap { $0.body })
+        return .init(
+            consumeStream.compactMap { message in
+                await logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
+                return message.body
+            }
+        )
     }
 
     /// Start consuming delivery messages from the consumer (no retries).

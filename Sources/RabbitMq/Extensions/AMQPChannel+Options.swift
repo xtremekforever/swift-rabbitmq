@@ -13,7 +13,10 @@ extension AMQPChannel {
             return
         }
 
-        logger.trace("Declaring exchange \(exchangeName) with options: \(exchangeOptions)")
+        logger.trace(
+            "Declaring exchange...",
+            metadata: ["name": .string(exchangeName), "options": .string("\(exchangeOptions)")]
+        )
         try await exchangeDeclare(
             name: exchangeName,
             type: exchangeOptions.type.rawValue,
@@ -35,7 +38,10 @@ extension AMQPChannel {
             return
         }
 
-        logger.trace("Declaring queue \(queueName) with options: \(queueOptions)")
+        logger.trace(
+            "Declaring queue...",
+            metadata: ["name": .string(queueName), "options": .string("\(queueOptions)")]
+        )
         try await queueDeclare(
             name: queueName,
             passive: queueOptions.passive,
@@ -59,7 +65,13 @@ extension AMQPChannel {
         }
 
         logger.trace(
-            "Binding queue \(queueName) to exchange \(exchangeName) with options: \(bindingOptions)")
+            "Binding queue to exchange",
+            metadata: [
+                "queueName": .string(queueName),
+                "exchangeName": .string(exchangeName),
+                "options": .string("\(bindingOptions)"),
+            ]
+        )
         try await queueBind(
             queue: queueName,
             exchange: exchangeName,
@@ -73,7 +85,7 @@ extension AMQPChannel {
         _ consumerOptions: ConsumerOptions,
         _ logger: Logger
     ) async throws -> AMQPSequence<AMQPClient.AMQPResponse.Channel.Message.Delivery> {
-        logger.trace("Consuming messages from queue \(queueName)...")
+        logger.trace("Consuming messages from queue...", metadata: ["name": .string(queueName)])
         return try await basicConsume(
             queue: queueName,
             consumerTag: consumerOptions.consumerTag,
@@ -90,7 +102,7 @@ extension AMQPChannel {
         _ publisherOptions: PublisherOptions,
         _ logger: Logger
     ) async throws -> AMQPResponse.Channel.Basic.Published {
-        logger.trace("Publishing message to exchange \(exchangeName)")
+        logger.trace("Publishing message to exchange...", metadata: ["name": .string(exchangeName)])
         return try await basicPublish(
             from: data,
             exchange: exchangeName,

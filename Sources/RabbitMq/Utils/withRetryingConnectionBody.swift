@@ -24,6 +24,7 @@ public let defaultRetryInterval = Duration.seconds(30)
 @discardableResult public func withRetryingConnectionBody<T: Sendable>(
     _ connection: Connection,
     operationName: String,
+    metadata: [String: Logger.MetadataValue] = [:],
     retryInterval: Duration = defaultRetryInterval,
     body: @escaping @Sendable () async throws -> T?
 ) async throws -> T? {
@@ -34,16 +35,18 @@ public let defaultRetryInterval = Duration.seconds(30)
     await connection.waitForConnection(timeout: retryInterval)
 
     while !Task.isCancelledOrShuttingDown {
+        let logger = await connection.logger.withMetadata(metadata)
+
         do {
-            connection.logger.trace("Starting body for operation \"\(operationName)\"...")
+            logger.trace("Starting body for operation \"\(operationName)\"...")
             if let result = try await body(), !(result is Void) {
                 return result
             }
         } catch AMQPConnectionError.connectionClosed(let replyCode, let replyText) {
             if !firstAttempt {
                 let error = AMQPConnectionError.connectionClosed(replyCode: replyCode, replyText: replyText)
-                connection.logger.error(
-                    "Connection closed while \(operationName): \(error)"
+                logger.error(
+                    "Connection closed while \(operationName)", metadata: ["error": .string("\(error)")]
                 )
             }
 
@@ -59,13 +62,16 @@ public let defaultRetryInterval = Duration.seconds(30)
                 continue
             }
 
-            connection.logger.error("Error \(operationName): \(error)")
+            logger.error("Error \(operationName)", metadata: ["error": .string("\(error)")])
             firstAttempt = false
         }
 
         // Exit on cancellation or shutdown
         if !Task.isCancelledOrShuttingDown {
-            connection.logger.trace("Will retry operation \"\(operationName)\" in \(retryInterval)...")
+            logger.trace(
+                "Will retry operation \"\(operationName)\" after interval...",
+                metadata: ["retryInterval": .stringConvertible(retryInterval)]
+            )
             try await Task.sleep(for: retryInterval)
         }
     }
