@@ -1,0 +1,59 @@
+name: Build & Test RabbitMq
+
+on:
+  push:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  linux-x64:
+    name: Build & Test (Linux x64)
+    runs-on: ubuntu-24.04
+    env:
+        RABBITMQ_DOCKER_COMPOSE: Docker/rabbitmq.docker-compose.yml
+    steps:
+    - uses: actions/checkout@v4
+    - name: Swift Info
+      shell: bash
+      run: which swift && swift --version
+    - name: Resolve Packages
+      shell: bash
+      run: swift package resolve
+    - name: Build
+      shell: bash
+      run: swift build --build-tests
+    - name: Start RabbitMQ
+      shell: bash
+      run: docker compose -f ${{ env.RABBITMQ_DOCKER_COMPOSE }} up --wait
+    - name: Run Tests
+      shell: bash
+      run: .build/debug/swift-rabbitmqPackageTests.xctest --testing-library swift-testing
+    - name: Stop RabbitMQ
+      shell: bash
+      run: docker compose -f ${{ env.RABBITMQ_DOCKER_COMPOSE }} down
+
+  linux-arm64:
+    name: Build & Test (Linux arm64)
+    runs-on: ubuntu-24.04-arm
+    env:
+        RABBITMQ_DOCKER_COMPOSE: Docker/rabbitmq.docker-compose.yml
+    steps:
+    - uses: actions/checkout@v4
+    - name: Swift Info
+      shell: bash
+      run: which swift && swift --version
+    - name: Resolve Packages
+      shell: bash
+      run: swift package resolve
+    - name: Build
+      shell: bash
+      run: swift build --build-tests
+    - name: Start RabbitMQ
+      shell: bash
+      run: docker compose -f ${{ env.RABBITMQ_DOCKER_COMPOSE }} up --wait
+    - name: Run Tests
+      shell: bash
+      run: .build/debug/swift-rabbitmqPackageTests.xctest --testing-library swift-testing
+    - name: Stop RabbitMQ
+      shell: bash
+      run: docker compose -f ${{ env.RABBITMQ_DOCKER_COMPOSE }} down
