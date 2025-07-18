@@ -1,9 +1,9 @@
 name: Swift Linux
 
 on:
-  push:
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   RABBITMQ_DOCKER_COMPOSE: Docker/rabbitmq.docker-compose.yml

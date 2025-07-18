@@ -1,9 +1,9 @@
 name: Swift armhf
 
 on:
-  push:
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   # MARK: linux-armhf
