@@ -14,6 +14,14 @@ jobs:
         swift-version: ["6.0.3", "6.1.2"]
         distribution: ["raspios-bullseye", "raspios-bookworm"]
         arch: ["armv6", "armv7"]
+        include:
+        # Swift 5.10.1 is not available for armv6
+        - swift-version: "5.10.1"
+          distribution: "raspios-bullseye"
+          arch: "armv7"
+        - swift-version: "5.10.1"
+          distribution: "raspios-bookworm"
+          arch: "armv7"
     name: Build for ${{ matrix.arch }} (${{ matrix.swift-version }}, ${{ matrix.distribution }})
     runs-on: ubuntu-latest
     container: swift:${{ matrix.swift-version }}
