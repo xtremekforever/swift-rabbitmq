@@ -14,14 +14,6 @@ jobs:
         swift-version: ["6.0.3", "6.1.2"]
         distribution: ["raspios-bullseye", "raspios-bookworm"]
         arch: ["armv6", "armv7"]
-        include:
-        # Swift 5.10.1 is not available for armv6
-        - swift-version: "5.10.1"
-          distribution: "raspios-bullseye"
-          arch: "armv7"
-        - swift-version: "5.10.1"
-          distribution: "raspios-bookworm"
-          arch: "armv7"
     name: Build for ${{ matrix.arch }} (${{ matrix.swift-version }}, ${{ matrix.distribution }})
     runs-on: ubuntu-latest
     container: swift:${{ matrix.swift-version }}
@@ -48,3 +40,31 @@ jobs:
         name: swift-rabbitmq-xctest-${{ matrix.swift-version }}-${{ matrix.distribution }}-${{ matrix.arch }}
         path: |
           .build/debug/*.xctest
+  
+  linux-armv7-5_10_1:
+    strategy:
+      fail-fast: false
+      matrix:
+        swift-version: ["5.10.1"]
+        distribution: ["raspios-bullseye", "raspios-bookworm"]
+        arch: ["armv7"]
+    name: Build for ${{ matrix.arch }} (${{ matrix.swift-version }}, ${{ matrix.distribution }})
+    runs-on: ubuntu-latest
+    container: swift:${{ matrix.swift-version }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Swift Info
+      shell: bash
+      run: which swift && swift --version
+    - uses: xtremekforever/swift-armhf-actions@main
+      name: Install SDK
+      id: target-sdk
+      with:
+        swift-version: ${{ matrix.swift-version }}
+        distribution: ${{ matrix.distribution }}
+        arch: ${{ matrix.arch }}
+    - name: Resolve Packages
+      shell: bash
+      run: swift package resolve
+    - name: Build
+      run: swift build --destination ${{ steps.target-sdk.outputs.destination_json }}
