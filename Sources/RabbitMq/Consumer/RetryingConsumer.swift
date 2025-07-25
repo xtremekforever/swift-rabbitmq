@@ -20,8 +20,8 @@ struct RetryingConsumer: Sendable {
     ) {
         self.connection = connection
         self.configuration = configuration
-        self.logger = connection.logger
         self.retryInterval = retryInterval
+        self.logger = connection.logger.withMetadata(["queueName": .string(configuration.queueName)])
     }
 
     func run() async throws {
@@ -31,7 +31,7 @@ struct RetryingConsumer: Sendable {
             }
 
             await cancellationChannel.waitUntilFinished()
-            logger.debug("Received cancellation for consumer on queue \(configuration.queueName)")
+            logger.debug("Received cancellation for consumer")
 
             group.cancelAll()
         }
@@ -39,19 +39,20 @@ struct RetryingConsumer: Sendable {
 
     private func performRetryingConsume() async throws {
         try await withRetryingConnectionBody(
-            connection, operationName: "consuming from queue \(configuration.queueName)",
+            connection, operationName: "consuming from queue",
+            metadata: ["queueName": .string(configuration.queueName)],
             retryInterval: retryInterval
         ) {
             let consumeStream = try await performConsume()
 
             // Consume sequence and add to AsyncChannel
             for try await message in consumeStream {
-                logger.trace("Consumed message from queue \(configuration.queueName): \(message)")
+                logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
                 await consumeChannel.send(message)
             }
 
             // Consumer completed, exit if the Task is cancelled
-            logger.debug("Consumer for queue \(configuration.queueName) completed...")
+            logger.debug("Consumer completed...")
         }
 
         // Finish channels on exit

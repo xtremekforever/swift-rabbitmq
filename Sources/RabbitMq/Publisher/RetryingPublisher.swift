@@ -5,8 +5,8 @@ import NIOCore
 struct RetryingPublisher: Sendable {
     let connection: Connection
     let configuration: PublisherConfiguration
-    let logger: Logger
     let retryInterval: Duration
+    let logger: Logger
 
     init(
         _ connection: Connection,
@@ -15,18 +15,21 @@ struct RetryingPublisher: Sendable {
     ) {
         self.connection = connection
         self.configuration = configuration
-        self.logger = connection.logger
         self.retryInterval = retryInterval
+        self.logger = connection.logger.withMetadata(["exchangeName": .string(configuration.exchangeName)])
     }
 
     @discardableResult func publish(
         _ data: ByteBuffer, routingKey: String = ""
     ) async throws -> AMQPResponse.Channel.Basic.Published? {
         return try await withRetryingConnectionBody(
-            connection, operationName: "publishing to exchange \(configuration.exchangeName)",
+            connection, operationName: "publishing to exchange",
+            metadata: ["exchangeName": .string(configuration.exchangeName)],
             retryInterval: retryInterval
         ) {
-            return try await connection.performPublish(configuration, data, routingKey: routingKey)
+            let response = try await connection.performPublish(configuration, data, routingKey: routingKey)
+            logger.trace("Published message", metadata: ["response": .string("\(response)")])
+            return response
         }
     }
 }

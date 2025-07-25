@@ -8,7 +8,7 @@ import Testing
 extension ConnectionTests {
     @Suite(.timeLimit(.minutes(1)))
     struct BasicConnectionTests {
-        let logger = createTestLogger()
+        let logger = createTestLogger(logLevel: .critical)
 
         @Test
         func connectsToBroker() async throws {
@@ -37,7 +37,6 @@ extension ConnectionTests {
             // Connect using first URL
             try await withBasicConnection(logger: logger) { connection in
                 #expect(await connection.isConnected)
-
                 // Now reconfigure, make sure we disconnect
                 let newUrl = "amqp://guest:guest@localhost:5672/%2F"
                 await connection.reconfigure(with: newUrl)

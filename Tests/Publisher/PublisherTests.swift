@@ -13,7 +13,7 @@ extension Publisher {
 
 @Suite(.timeLimit(.minutes(1)))
 struct PublisherTests {
-    let logger = createTestLogger()
+    let logger = createTestLogger(logLevel: .critical)
 
     func withConnectedPublisher(
         _ exchangeName: String = "",
@@ -22,6 +22,9 @@ struct PublisherTests {
         try await withBasicConnection(logger: logger) { connection in
             let publisher = Publisher(connection, exchangeName)
             try await body(publisher)
+
+            // Verify that exchangeName metadata is included in the publisher logger
+            try #expect(#require(publisher.logger[metadataKey: "exchangeName"]) == .string(exchangeName))
         }
     }
 

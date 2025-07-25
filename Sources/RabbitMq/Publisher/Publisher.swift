@@ -36,7 +36,7 @@ public struct Publisher: Sendable {
             exchangeOptions: exchangeOptions,
             publisherOptions: publisherOptions
         )
-        self.logger = connection.logger
+        self.logger = connection.logger.withMetadata(["exchangeName": .string(configuration.exchangeName)])
     }
 
     /// Publish a message to the broker (no retries).
@@ -50,7 +50,9 @@ public struct Publisher: Sendable {
     @discardableResult public func publish(
         _ data: ByteBuffer, routingKey: String = ""
     ) async throws -> AMQPResponse.Channel.Basic.Published {
-        return try await connection.performPublish(configuration, data, routingKey: routingKey)
+        let response = try await connection.performPublish(configuration, data, routingKey: routingKey)
+        logger.trace("Published message", metadata: ["response": .string("\(response)")])
+        return response
     }
 
     /// Publish a message to the broker (no retries).

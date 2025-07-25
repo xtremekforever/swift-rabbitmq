@@ -52,7 +52,7 @@ public struct Consumer: Sendable {
             bindingOptions: bindingOptions,
             consumerOptions: consumerOptions
         )
-        self.logger = connection.logger
+        self.logger = connection.logger.withMetadata(["queueName": .string(configuration.queueName)])
     }
 
     /// Start consuming strings from the consumer (no retries).
@@ -63,7 +63,12 @@ public struct Consumer: Sendable {
     public func consume() async throws -> AnyAsyncSequence<String> {
         // We starting consuming before wrapping the stream below
         let consumeStream = try await connection.performConsume(configuration)
-        return .init(consumeStream.compactMap { String(buffer: $0.body) })
+        return .init(
+            consumeStream.compactMap { message in
+                logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
+                return String(buffer: message.body)
+            }
+        )
     }
 
     /// Start consuming from the consumer (no retries).
@@ -74,7 +79,12 @@ public struct Consumer: Sendable {
     public func consumeBuffer() async throws -> AnyAsyncSequence<ByteBuffer> {
         // We starting consuming before wrapping the stream below
         let consumeStream = try await connection.performConsume(configuration)
-        return .init(consumeStream.compactMap { $0.body })
+        return .init(
+            consumeStream.compactMap { message in
+                logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
+                return message.body
+            }
+        )
     }
 
     /// Start consuming delivery messages from the consumer (no retries).

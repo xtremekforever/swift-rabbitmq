@@ -5,7 +5,7 @@ import Testing
 extension ConnectionTests {
     @Suite(.timeLimit(.minutes(1)))
     struct RetryingConnectionTests {
-        let logger = createTestLogger()
+        let logger = createTestLogger(logLevel: .critical)
 
         func withRetryingConnection(
             _ url: String? = nil,
@@ -47,7 +47,6 @@ extension ConnectionTests {
             try await withRetryingConnection { connection, port in
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
-
                 // Now reconfigure, make sure we disconnect
                 let newUrl = "amqp://guest:guest@localhost:\(port)/%2F"
                 let newReconnectionInterval = Duration.milliseconds(750)

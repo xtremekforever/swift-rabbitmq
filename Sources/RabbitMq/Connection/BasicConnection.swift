@@ -81,8 +81,10 @@ public actor BasicConnection: Connection {
         connecting = true
         defer { connecting = false }
 
+        let logger = logger.withMetadata(["url": .string(url)])
+
         // Actually connect
-        logger.info("Connecting to broker at \(url)")
+        logger.info("Connecting to broker...")
         connection = try await AMQPConnection.connect(
             use: eventLoop,
             from: AMQPConnectionConfiguration(
@@ -91,7 +93,7 @@ public actor BasicConnection: Connection {
                 connectionName: configuration.connectionName ?? logger.label
             )
         )
-        logger.info("Connected to broker at \(url)")
+        logger.info("Connected to broker")
     }
 
     /// Reconfigure this connection to RabbitMQ.
@@ -110,7 +112,9 @@ public actor BasicConnection: Connection {
 
         // If the URL changes
         if url != self.url {
-            logger.debug("Received call to reconfigure connection from \(self.url) -> \(url)")
+            logger.debug(
+                "Reconfiguring connection...", metadata: ["oldUrl": .string(self.url), "newUrl": .string(url)]
+            )
 
             // While this flag is true, connect() will not be allowed to connect
             reconfiguring = true
@@ -119,7 +123,7 @@ public actor BasicConnection: Connection {
             await close()
         }
 
-        // Update configuration before closing connection
+        // Update configuration
         self.url = url
         self.configuration = configuration
     }
@@ -160,7 +164,7 @@ public actor BasicConnection: Connection {
             return
         }
 
-        logger.info("Closing connection to \(url)")
+        logger.info("Closing connection...", metadata: ["url": .string(url)])
         try? await connection?.close()
         try? await channel?.close()
     }

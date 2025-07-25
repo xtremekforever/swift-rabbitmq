@@ -13,7 +13,7 @@ extension Consumer {
 
 @Suite(.timeLimit(.minutes(1)))
 struct ConsumerTests {
-    let logger = createTestLogger()
+    let logger = createTestLogger(logLevel: .critical)
 
     func withConnectedConsumer(
         _ consumerName: String = "",
@@ -22,6 +22,9 @@ struct ConsumerTests {
         try await withBasicConnection(logger: logger) { connection in
             let consumer = Consumer(connection, consumerName, consumerName, consumerOptions: .init(autoAck: true))
             try await body(consumer)
+
+            // Verify that queueName metadata is included in the consumer logger
+            try #expect(#require(consumer.logger[metadataKey: "queueName"]) == .string(consumerName))
         }
     }
 
