@@ -2,7 +2,7 @@ import AMQPClient
 import Logging
 import NIOCore
 
-struct RetryingPublisher {
+struct RetryingPublisher: Sendable {
     let connection: Connection
     let configuration: PublisherConfiguration
     let retryInterval: Duration

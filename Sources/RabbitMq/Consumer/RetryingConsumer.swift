@@ -3,7 +3,7 @@ import AsyncAlgorithms
 import Logging
 import NIOCore
 
-struct RetryingConsumer {
+struct RetryingConsumer: Sendable {
     let connection: Connection
     let configuration: ConsumerConfiguration
     let logger: Logger
