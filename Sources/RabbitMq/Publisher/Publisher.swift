@@ -12,15 +12,10 @@ import NIOCore
 /// )
 /// try await publisher.publish("Publish this!")
 /// ```
-public struct Publisher: ConnectionLoggable {
+public struct Publisher: Sendable {
     let connection: Connection
     let configuration: PublisherConfiguration
-
-    var logger: Logger {
-        get async {
-            await connection.logger.withMetadata(["exchangeName": .string(configuration.exchangeName)])
-        }
-    }
+    let logger: Logger
 
     /// Create the publisher. If the default parameters are used, this publishes to the default exchange on the broker.
     ///
@@ -41,6 +36,7 @@ public struct Publisher: ConnectionLoggable {
             exchangeOptions: exchangeOptions,
             publisherOptions: publisherOptions
         )
+        self.logger = connection.logger.withMetadata(["exchangeName": .string(configuration.exchangeName)])
     }
 
     /// Publish a message to the broker (no retries).
@@ -55,7 +51,7 @@ public struct Publisher: ConnectionLoggable {
         _ data: ByteBuffer, routingKey: String = ""
     ) async throws -> AMQPResponse.Channel.Basic.Published {
         let response = try await connection.performPublish(configuration, data, routingKey: routingKey)
-        await logger.trace("Published message", metadata: ["published": .string("\(response)")])
+        logger.trace("Published message", metadata: ["response": .string("\(response)")])
         return response
     }
 

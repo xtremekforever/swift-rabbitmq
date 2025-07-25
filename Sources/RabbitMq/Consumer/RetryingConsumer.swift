@@ -3,20 +3,15 @@ import AsyncAlgorithms
 import Logging
 import NIOCore
 
-struct RetryingConsumer: ConnectionLoggable {
+struct RetryingConsumer {
     let connection: Connection
     let configuration: ConsumerConfiguration
+    let logger: Logger
 
     let retryInterval: Duration
     let consumerWaitChannel = AsyncChannel<Void>()
     let consumeChannel = AsyncChannel<AMQPResponse.Channel.Message.Delivery>()
     let cancellationChannel = AsyncChannel<Void>()
-
-    var logger: Logger {
-        get async {
-            await connection.logger.withMetadata(["queueName": .string(configuration.queueName)])
-        }
-    }
 
     init(
         _ connection: Connection,
@@ -26,6 +21,7 @@ struct RetryingConsumer: ConnectionLoggable {
         self.connection = connection
         self.configuration = configuration
         self.retryInterval = retryInterval
+        self.logger = connection.logger.withMetadata(["queueName": .string(configuration.queueName)])
     }
 
     func run() async throws {
@@ -35,7 +31,7 @@ struct RetryingConsumer: ConnectionLoggable {
             }
 
             await cancellationChannel.waitUntilFinished()
-            await logger.debug("Received cancellation for consumer")
+            logger.debug("Received cancellation for consumer")
 
             group.cancelAll()
         }
@@ -51,12 +47,12 @@ struct RetryingConsumer: ConnectionLoggable {
 
             // Consume sequence and add to AsyncChannel
             for try await message in consumeStream {
-                await logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
+                logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
                 await consumeChannel.send(message)
             }
 
             // Consumer completed, exit if the Task is cancelled
-            await logger.debug("Consumer completed...")
+            logger.debug("Consumer completed...")
         }
 
         // Finish channels on exit

@@ -2,16 +2,11 @@ import AMQPClient
 import Logging
 import NIOCore
 
-struct RetryingPublisher: ConnectionLoggable {
+struct RetryingPublisher {
     let connection: Connection
     let configuration: PublisherConfiguration
     let retryInterval: Duration
-
-    var logger: Logger {
-        get async {
-            await connection.logger.withMetadata(["exchangeName": .string(configuration.exchangeName)])
-        }
-    }
+    let logger: Logger
 
     init(
         _ connection: Connection,
@@ -21,6 +16,7 @@ struct RetryingPublisher: ConnectionLoggable {
         self.connection = connection
         self.configuration = configuration
         self.retryInterval = retryInterval
+        self.logger = connection.logger.withMetadata(["exchangeName": .string(configuration.exchangeName)])
     }
 
     @discardableResult func publish(
@@ -32,7 +28,7 @@ struct RetryingPublisher: ConnectionLoggable {
             retryInterval: retryInterval
         ) {
             let response = try await connection.performPublish(configuration, data, routingKey: routingKey)
-            await logger.trace("Published message", metadata: ["published": .string("\(response)")])
+            logger.trace("Published message", metadata: ["response": .string("\(response)")])
             return response
         }
     }

@@ -21,7 +21,7 @@ public actor BasicConnection: Connection {
     private let eventLoop: EventLoop
 
     // Protocol conformances
-    public var logger: Logger  // shared to users of Connection
+    public let logger: Logger  // shared to users of Connection
     public let connectionPollingInterval: Duration
     public var configuredUrl: String {
         return url
@@ -61,7 +61,7 @@ public actor BasicConnection: Connection {
         self.url = url
         self.configuration = configuration
         self.eventLoop = eventLoop
-        self.logger = logger.withMetadata(["url": .string(url)])
+        self.logger = logger
         self.connectionPollingInterval = connectionPollingInterval
     }
 
@@ -81,8 +81,10 @@ public actor BasicConnection: Connection {
         connecting = true
         defer { connecting = false }
 
+        let logger = logger.withMetadata(["url": .string(url)])
+
         // Actually connect
-        logger.info("Connecting to broker")
+        logger.info("Connecting to broker...")
         connection = try await AMQPConnection.connect(
             use: eventLoop,
             from: AMQPConnectionConfiguration(
@@ -110,7 +112,9 @@ public actor BasicConnection: Connection {
 
         // If the URL changes
         if url != self.url {
-            logger.debug("Reconfiguring connection", metadata: ["newUrl": .string(url)])
+            logger.debug(
+                "Reconfiguring connection...", metadata: ["oldUrl": .string(self.url), "newUrl": .string(url)]
+            )
 
             // While this flag is true, connect() will not be allowed to connect
             reconfiguring = true
@@ -122,9 +126,6 @@ public actor BasicConnection: Connection {
         // Update configuration
         self.url = url
         self.configuration = configuration
-
-        // Update logger metadata to reflect new URL
-        self.logger[metadataKey: "url"] = .string(url)
     }
 
     /// Open or get a channel instance for the current connection.
@@ -163,7 +164,7 @@ public actor BasicConnection: Connection {
             return
         }
 
-        logger.info("Closing connection")
+        logger.info("Closing connection...", metadata: ["url": .string(url)])
         try? await connection?.close()
         try? await channel?.close()
     }

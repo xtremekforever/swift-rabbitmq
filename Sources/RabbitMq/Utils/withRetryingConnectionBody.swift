@@ -35,7 +35,7 @@ public let defaultRetryInterval = Duration.seconds(30)
     await connection.waitForConnection(timeout: retryInterval)
 
     while !Task.isCancelledOrShuttingDown {
-        let logger = await connection.logger.withMetadata(metadata)
+        let logger = connection.logger.withMetadata(metadata)
 
         do {
             logger.trace("Starting body for operation \"\(operationName)\"...")

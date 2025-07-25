@@ -24,9 +24,7 @@ public actor RetryingConnection: Connection, Service {
 
     // Protocol conformances
     public let connectionPollingInterval: Duration
-    public var logger: Logger {
-        get async { await basicConnection.logger }
-    }
+    public nonisolated var logger: Logger { basicConnection.logger }
     public var configuredUrl: String {
         get async { await basicConnection.configuredUrl }
     }
@@ -73,7 +71,7 @@ public actor RetryingConnection: Connection, Service {
         // Update reconnection interval, this will apply on the next reconnection
         if let reconnectionInterval {
             if reconnectionInterval != self.reconnectionInterval {
-                await logger.debug(
+                logger.debug(
                     "Changing reconnection interval",
                     metadata: [
                         "currentInterval": .stringConvertible(self.reconnectionInterval),
@@ -122,7 +120,10 @@ public actor RetryingConnection: Connection, Service {
                 connectionAttempts = 0
                 lastConnectionAttempt = nil
             } catch {
-                await logger.error("Unable to connect to broker", metadata: ["error": .string("\(error)")])
+                let url = await configuredUrl
+                logger.error(
+                    "Unable to connect to broker", metadata: ["url": .string(url), "error": .string("\(error)")]
+                )
                 lastConnectionAttempt = ContinuousClock().now
             }
             connectionAttempts += 1

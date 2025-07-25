@@ -16,15 +16,10 @@ import NIO
 ///     print(message)
 /// }
 /// ```
-public struct Consumer: ConnectionLoggable {
+public struct Consumer: Sendable {
     let connection: Connection
     let configuration: ConsumerConfiguration
-
-    var logger: Logger {
-        get async {
-            await connection.logger.withMetadata(["queueName": .string(configuration.queueName)])
-        }
-    }
+    let logger: Logger
 
     /// Create the consumer. If the default parameters are used, this consumes on the default queue on the broker.
     ///
@@ -57,6 +52,7 @@ public struct Consumer: ConnectionLoggable {
             bindingOptions: bindingOptions,
             consumerOptions: consumerOptions
         )
+        self.logger = connection.logger.withMetadata(["queueName": .string(configuration.queueName)])
     }
 
     /// Start consuming strings from the consumer (no retries).
@@ -69,7 +65,7 @@ public struct Consumer: ConnectionLoggable {
         let consumeStream = try await connection.performConsume(configuration)
         return .init(
             consumeStream.compactMap { message in
-                await logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
+                logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
                 return String(buffer: message.body)
             }
         )
@@ -85,7 +81,7 @@ public struct Consumer: ConnectionLoggable {
         let consumeStream = try await connection.performConsume(configuration)
         return .init(
             consumeStream.compactMap { message in
-                await logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
+                logger.trace("Consumed message", metadata: ["delivery": .string("\(message)")])
                 return message.body
             }
         )

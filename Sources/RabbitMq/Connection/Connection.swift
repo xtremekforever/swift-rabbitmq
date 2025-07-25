@@ -15,7 +15,7 @@ public let defaultConnectionPollingInterval = Duration.milliseconds(250)
 ///
 public protocol Connection: Sendable {
     /// Required by `Consumer` and `Publisher` for logging purposes.
-    var logger: Logger { get async }
+    var logger: Logger { get }
 
     /// The interval to use for polling the connection. Used by `waitForConnection()`.
     var connectionPollingInterval: Duration { get }
