@@ -20,20 +20,6 @@ PLEASE NOTE: this library is still in development and has not reached v1 status 
 
 In the end, the goal of this library is to provide a nice API for applications to use RabbitMQ without getting too in-the-weeds about the specifics of how to publish and consume messages from the broker.
 
-## Installation
-
-Add the following dependency to your Package.swift file:
-
-```swift
-.package(url: "https://github.com/xtremekforever/swift-rabbitmq", from: "0.1.0")
-```
-
-Then, add it to your target dependencies section like this:
-
-```swift
-.product(name: "RabbitMq", package: "swift-rabbitmq")
-```
-
 ## Dependencies
 
 This library only supports Swift 5.10 or later, since the underlying [Semaphore](https://github.com/groue/Semaphore) library requires at least 5.10.
@@ -49,6 +35,56 @@ The library is only compatible with the following operating systems:
 - iOS 17 and later
 - tvOS 17 and later
 - watchOS 10 and later
+
+## First Steps
+
+The best way to get familiar with this library is to run the examples and the test suite. For this you must have Docker installed on your host Linux or macOS system to run the sample RabbitMQ broker included with the project.
+
+Run the following commands to launch RabbitMQ from the terminal:
+
+```console
+cd Docker
+docker compose -f rabbitmq.docker-compose.yml up -d
+```
+
+Once that is running, you can launch the examples either by going to the Run and Debug pane in VSCode and starting either the `BasicConsumePublish` or `ConsumePublishServices`. Or, use `swift run` from the command line:
+
+```console
+swift run BasicConsumePublish
+swift run ConsumePublishServices
+```
+
+Finally, to run the test suite, you must be using Swift 6.0 or later. Then, either go to the Testing pane in VSCode and run the tests, OR run the `swift test` command from the CLI:
+
+```console
+$ swift test
+Test Suite 'All tests' started at 2025-07-18 16:29:20.859
+Test Suite 'debug.xctest' started at 2025-07-18 16:29:20.861
+Test Suite 'debug.xctest' passed at 2025-07-18 16:29:20.861
+         Executed 0 tests, with 0 failures (0 unexpected) in 0.0 (0.0) seconds
+Test Suite 'All tests' passed at 2025-07-18 16:29:20.861
+         Executed 0 tests, with 0 failures (0 unexpected) in 0.0 (0.0) seconds
+◇ Test run started.
+↳ Testing Library Version: 6.1.2 (d6b70f9ef9eb207)
+↳ Target Platform: x86_64-unknown-linux-gnu
+...
+```
+
+See the next sections on how to use this library in your project.
+
+## Installation
+
+Add the following dependency to your Package.swift file:
+
+```swift
+.package(url: "https://github.com/xtremekforever/swift-rabbitmq", from: "0.1.0")
+```
+
+Then, add it to your target dependencies section like this:
+
+```swift
+.product(name: "RabbitMq", package: "swift-rabbitmq")
+```
 
 ## Usage
 
