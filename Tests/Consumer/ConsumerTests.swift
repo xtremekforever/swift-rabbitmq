@@ -24,7 +24,7 @@ struct ConsumerTests {
             try await body(consumer)
 
             // Verify that queueName metadata is included in the consumer logger
-            try #expect(#require(await consumer.logger[metadataKey: "queueName"]) == .string(consumerName))
+            try #expect(#require(consumer.logger[metadataKey: "queueName"]) == .string(consumerName))
         }
     }
 

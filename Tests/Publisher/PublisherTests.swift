@@ -24,7 +24,7 @@ struct PublisherTests {
             try await body(publisher)
 
             // Verify that exchangeName metadata is included in the publisher logger
-            try #expect(#require(await publisher.logger[metadataKey: "exchangeName"]) == .string(exchangeName))
+            try #expect(#require(publisher.logger[metadataKey: "exchangeName"]) == .string(exchangeName))
         }
     }
 
