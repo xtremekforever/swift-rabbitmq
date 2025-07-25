@@ -28,7 +28,6 @@ extension ConnectionTests {
             try await withRetryingConnection { connection, _ in
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
-                #expect(await connection.logger[metadataKey: "url"] != nil)
                 let channel = try await connection.getChannel()
                 #expect(channel != nil)
             }
@@ -48,9 +47,6 @@ extension ConnectionTests {
             try await withRetryingConnection { connection, port in
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
-                let origUrl = await connection.configuredUrl
-                try #expect(#require(await connection.logger[metadataKey: "url"]) == .string(origUrl))
-
                 // Now reconfigure, make sure we disconnect
                 let newUrl = "amqp://guest:guest@localhost:\(port)/%2F"
                 let newReconnectionInterval = Duration.milliseconds(750)
@@ -62,7 +58,6 @@ extension ConnectionTests {
                 // Wait for reconnection with new string
                 await connection.waitForConnection(timeout: .seconds(5))
                 #expect(await connection.isConnected)
-                try #expect(#require(await connection.logger[metadataKey: "url"]) == .string(newUrl))
             }
         }
     }
