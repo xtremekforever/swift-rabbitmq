@@ -24,7 +24,7 @@ jobs:
     - name: Swift Info
       shell: bash
       run: which swift && swift --version
-    - uses: xtremekforever/swift-armhf-actions@main
+    - uses: swift-embedded-linux/armhf-action@main
       name: Install SDK
       id: target-sdk
       with:

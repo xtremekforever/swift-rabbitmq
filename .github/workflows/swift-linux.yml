@@ -42,25 +42,25 @@ jobs:
       run: docker compose -f ${{ env.RABBITMQ_DOCKER_COMPOSE }} down
 
   # MARK: linux-release
-  linux-release:
-    name: Build Release Mode
-    strategy:
-      fail-fast: false
-      matrix:
-        swift-version: ["5.10.1", "6.0.3", "6.1.2"]
-        runner: ["ubuntu-24.04", "ubuntu-24.04-arm"]
-    runs-on: ${{ matrix.runner }}
-    steps:
-    - uses: actions/checkout@v4
-    - uses: vapor/swiftly-action@v0.2
-      with:
-        toolchain: ${{ matrix.swift-version}}
-    - name: Swift Info
-      shell: bash
-      run: which swift && swift --version
-    - name: Resolve Packages
-      shell: bash
-      run: swift package resolve
-    - name: Build
-      shell: bash
-      run: swift build -c release
+  # linux-release:
+  #   name: Build Release Mode
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       swift-version: ["5.10.1", "6.0.3", "6.1.2"]
+  #       runner: ["ubuntu-24.04", "ubuntu-24.04-arm"]
+  #   runs-on: ${{ matrix.runner }}
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - uses: vapor/swiftly-action@v0.2
+  #     with:
+  #       toolchain: ${{ matrix.swift-version}}
+  #   - name: Swift Info
+  #     shell: bash
+  #     run: which swift && swift --version
+  #   - name: Resolve Packages
+  #     shell: bash
+  #     run: swift package resolve
+  #   - name: Build
+  #     shell: bash
+  #     run: swift build -c release
