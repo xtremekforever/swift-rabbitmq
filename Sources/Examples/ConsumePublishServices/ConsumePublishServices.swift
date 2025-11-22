@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import Logging
+import ProfileRecorderServer
 import ServiceLifecycle
 
 struct ServiceExampleContract: Codable {
@@ -34,6 +35,8 @@ struct ConsumePublishServices: AsyncParsableCommand {
 
     mutating func run() async throws {
         let logger = createLogger()
+
+        async let _ = ProfileRecorderServer(configuration: .parseFromEnvironment()).runIgnoringFailures(logger: logger)
 
         let rabbitMqService = RabbitMqService(
             rabbitUrl, logger, reconnectionInterval: .seconds(self.reconnectionInterval)

@@ -28,6 +28,7 @@ var targets: [Target] = [
         dependencies: [
             "RabbitMq",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            .product(name: "ProfileRecorderServer", package: "swift-profile-recorder"),
         ],
         path: "Sources/Examples/ConsumePublishServices"
     ),
