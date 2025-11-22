@@ -1,6 +1,7 @@
 import ArgumentParser
 import Logging
 import NIO
+import ProfileRecorderServer
 import RabbitMq
 
 @main
@@ -23,6 +24,8 @@ struct BasicConsumePublish: AsyncParsableCommand {
 
     mutating func run() async throws {
         let logger = createLogger()
+
+        async let _ = ProfileRecorderServer(configuration: .parseFromEnvironment()).runIgnoringFailures(logger: logger)
 
         // Create connection and connect to the broker
         let connection = BasicConnection(rabbitUrl, logger: logger)

@@ -19,6 +19,7 @@ var targets: [Target] = [
         dependencies: [
             "RabbitMq",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            .product(name: "ProfileRecorderServer", package: "swift-profile-recorder"),
         ],
         path: "Sources/Examples/BasicConsumePublish"
     ),
@@ -71,6 +72,7 @@ let package = Package(
         .package(url: "https://github.com/groue/Semaphore.git", from: "0.1.0"),
         .package(url: "https://github.com/xtremekforever/testcontainers-swift.git", branch: "main"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-profile-recorder.git", .upToNextMinor(from: "0.3.0")),
     ],
     targets: targets
 )
