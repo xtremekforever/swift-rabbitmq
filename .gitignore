@@ -19,4 +19,5 @@ settings.json
 # macOS
 .DS_Store
 
-*.perf
+# Swiftly
+.swift-version

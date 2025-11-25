@@ -1,15 +1,6 @@
 {
-  "originHash" : "6d22b42d8851764c3f5aa98dd23308e941f306e2607b338a7b489e87b7a86562",
+  "originHash" : "6f8ad0657ae964861c7cb305ef477810a01c50b94c684f946c1f068cf57080f2",
   "pins" : [
-    {
-      "identity" : "async-http-client",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-server/async-http-client.git",
-      "state" : {
-        "revision" : "60235983163d040f343a489f7e2e77c1918a8bd9",
-        "version" : "1.26.1"
-      }
-    },
     {
       "identity" : "rabbitmq-nio",
       "kind" : "remoteSourceControl",
@@ -182,15 +173,6 @@
       }
     },
     {
-      "identity" : "swift-nio-transport-services",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-nio-transport-services.git",
-      "state" : {
-        "revision" : "decfd235996bc163b44e10b8a24997a3d2104b90",
-        "version" : "1.25.0"
-      }
-    },
-    {
       "identity" : "swift-numerics",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-numerics.git",
@@ -233,15 +215,6 @@
       "state" : {
         "revision" : "61e4ca4b81b9e09e2ec863b00c340eb13497dac6",
         "version" : "1.5.0"
-      }
-    },
-    {
-      "identity" : "testcontainers-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/xtremekforever/testcontainers-swift.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "9be8a421e94e4d30048e178a7b0c8b2bcb9f5e8b"
       }
     }
   ],
