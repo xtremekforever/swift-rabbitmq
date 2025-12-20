@@ -71,7 +71,7 @@ let package = Package(
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
         .package(url: "https://github.com/groue/Semaphore.git", from: "0.1.0"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-profile-recorder.git", .upToNextMinor(from: "0.3.0")),
+        .package(url: "https://github.com/jessezamora/swift-profile-recorder.git", branch: "#48-add-armv6-armv7-support"),
     ],
     targets: targets
 )
