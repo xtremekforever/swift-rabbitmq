@@ -64,7 +64,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-docc-plugin.git", from: "1.1.0"),
         .package(url: "https://github.com/funcmike/rabbitmq-nio.git", from: "0.1.0-beta4"),
-        .package(url: "https://github.com/apple/swift-async-algorithms.git", from: "1.0.0"),
+        // AsyncAlgorithms 1.1 uses syntax that cannot be compiled with Swift 5.10.1.
+        .package(url: "https://github.com/apple/swift-async-algorithms.git", "1.0.0"..<"1.1.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
         .package(url: "https://github.com/groue/Semaphore.git", from: "0.1.0"),
